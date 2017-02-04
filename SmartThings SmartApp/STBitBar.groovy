@@ -15,6 +15,8 @@
  */
  
  // V 1.0 Initial release
+ // V 1.1 Added logging from @kurtsanders making it easier to copy/paste URL and secret
+ 
 definition(
     name: "BitBar Output App",
     namespace: "mattwz",
@@ -83,8 +85,16 @@ def uninstalled() {
 	}
 }
 def updated() {
-	log.debug "Updated with settings: ${settings}"
+	// Added additional logging from @kurtsanders
+	log.debug "Bitbar Outout App updated with the following settings:\n${settings}"
+    log.debug "##########################################################################################"
+    log.debug "secret = \"${state.endpointSecret}\""
+    log.debug "smartAppURL = \"${state.endpointURL}\""
+    log.debug "The API has been setup. Please enter the following two lines into the ST BitBar Python script in your plugins directory."
+    log.debug "##########################################################################################"
 
+	unsubscribe()
+	initialize()
 	unsubscribe()
 	initialize()
 }
