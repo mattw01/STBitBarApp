@@ -3,22 +3,24 @@ import sys
 import json
 import subprocess
 from subprocess import check_output
+import ConfigParser
+import os
+import re
 
-##########################################################################################
-## USER INPUT ############################################################################
-## Enter your SmartApp URL and Secret below ##############################################
-##########################################################################################
-
-smartAppURL = "https://graph.api.smartthings.com/api/smartapps/installations/[Your SmartAppID]"
-secret = "Your Secret Goes Here"
-
-# Use images for switch status' (green/red dot) instead of emojis
-useImages = True
-
-##########################################################################################
-## END USER INPUT ########################################################################
-##########################################################################################
-
+# Read User Config File
+config = ConfigParser.ConfigParser()
+try:
+	config.read(sys.argv[0][:-2] + "cfg")
+	smartAppURL = re.sub(r'^"|"$', '', config.get('My Section', 'smartAppURL'))
+	secret 		= re.sub(r'^"|"$', '', config.get('My Section', 'secret'))
+except:
+	print "Fatal Error: Error in config file syntax"
+	exit(99)
+try:
+	useImages 	= re.sub(r'^"|"$', '', config.get('My Section', 'useImages'))
+except ConfigParser.NoOptionError:
+	useImages = True
+	pass
 
 #Set URLs
 statusURL = smartAppURL + "GetStatus/"
