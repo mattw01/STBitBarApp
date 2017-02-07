@@ -41,6 +41,17 @@ except subprocess.CalledProcessError as grepexc:
 # Parse the JSON data
 j = json.loads(output)
 
+# API Return Error Handling 
+if "error" in j:
+	print "Error while communicating with ST API"
+	print '---'
+	if j['error'] == 'invalid_token':
+		print "Please check your SmartApp URL and Secret are both correct and try again."
+	print "Error Details: ", j['error']
+	if "error_description" in j:
+		print "Error Description: ", j['error_description']
+	raise SystemExit(0)
+
 # Get the sensor arrays from the JSON data
 temps =       j['Temp Sensors']
 contacts =    j['Contact Sensors']
