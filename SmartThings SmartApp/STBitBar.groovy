@@ -16,6 +16,7 @@
  
  // V 1.0 Initial release
  // V 1.1 Added logging from @kurtsanders making it easier to copy/paste URL and secret
+ // V 1.2 Add extra handling if Main Display is not set (right now N/A is displayed)
  
 definition(
     name: "BitBar Output App",
@@ -174,8 +175,16 @@ def getSwitchData() {
     return resp
 }
 def getMainDisplayData() {
+	def returnName;
+    def returnValue;
+    
+    if(displayTempName) returnName = displayTempName
+    else returnName = "N/A"
+    if(displayTemp) returnValue = displayTemp.currentTemperature
+    else returnValue = "N/A"
+    
 	def resp = []
-    resp << [name: displayTempName, value: displayTemp.currentTemperature];
+    resp << [name: returnName, value: returnValue];
     return resp
 }
 def getStatus() {
