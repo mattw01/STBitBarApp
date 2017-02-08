@@ -6,6 +6,30 @@ from subprocess import check_output
 import ConfigParser
 import os
 import re
+import decimal
+
+# Define class for formatting numerical outputs (temp sensors)
+# Define NumberFormatter class
+class NumberFormatter:
+	def __init__(self):
+		self.decmialRounding = 0
+		self.staticDecimalPlaces = -1
+	def setRoundingPrecision(self, precision):
+		self.decmialRounding = precision
+	def setStaticDecimalPlaces(self, places):
+		self.staticDecimalPlaces = places
+	def getNumberOfDecimals(self, number):
+		return abs(decimal.Decimal(str(number)).as_tuple().exponent)
+	def formatNumber(self, number):
+		r = round(number, self.decmialRounding)
+		if self.staticDecimalPlaces is not -1:
+			formatter = "{0:." + str(self.staticDecimalPlaces) + "f}"
+			return formatter.format(r)
+		else: 
+			if r % 1 == 0: return str(int(r))
+			else: return str(r)
+# End NumberFormatter
+
 
 # Read User Config File
 config = ConfigParser.ConfigParser()
@@ -21,11 +45,15 @@ try:
 except ConfigParser.NoOptionError:
     useImages = True
     pass
-
 try:
-    tempFormatNumberOfDecimals = re.sub(r'^"|"$', '', config.get('My Section', 'tempFormatNumberOfDecimals'))
+    numberOfDecimals = int(re.sub(r'^"|"$', '', config.get('My Section', 'numberOfDecimals')))
 except ConfigParser.NoOptionError:
-    tempFormatNumberOfDecimals = "{0:.0f}"
+    numberOfDecimals = 0
+    pass
+try:
+    matchOutputNumberOfDecimals = re.sub(r'^"|"$', '', config.get('My Section', 'matchOutputNumberOfDecimals'))
+except ConfigParser.NoOptionError:
+    matchOutputNumberOfDecimals = False
     pass
 
 # Set URLs
@@ -66,17 +94,25 @@ contacts = j['Contact Sensors']
 switches = j['Switches']
 mainDisplay = j['MainDisplay']
 
+# Create a new NumberFormatter object
+formatter = NumberFormatter()
+# Set the number of decimals
+formatter.setRoundingPrecision(numberOfDecimals)
+
 # Print the main display
 if mainDisplay[0]['name'] == None:
-    print tempFormatNumberOfDecimals.format(mainDisplay[0]['value'])
+    print formatter.formatNumber(mainDisplay[0]['value'])
 else:
-    print mainDisplay[0]['name'], ":", tempFormatNumberOfDecimals.format(mainDisplay[0]['value'])
+    print mainDisplay[0]['name'], ":", formatter.formatNumber(mainDisplay[0]['value'])
 
 # Find the max length sensor so values are lined up correctly
 maxLength = 0
+maxDecimals = 0
 for sensor in temps:
     if len(sensor['name']) > maxLength:
         maxLength = len(sensor['name'])
+    if formatter.getNumberOfDecimals(sensor['value']) > maxDecimals:
+    	maxDecimals = formatter.getNumberOfDecimals(sensor['value'])
 
 for sensor in contacts:
     if len(sensor['name']) > maxLength:
@@ -87,6 +123,10 @@ for sensor in switches:
         maxLength = len(sensor['name'])
 # Increment maxLength by one since contact sensor icon needs to be pulled back a little
 maxLength += 1
+
+if matchOutputNumberOfDecimals is True:
+	formatter.setStaticDecimalPlaces(maxDecimals)
+else: formatter.setStaticDecimalPlaces(-1)
 
 # Output the seperation '---' between status bar items and menu items
 print '---'
@@ -102,9 +142,9 @@ for sensor in temps:
     whiteSpace = ''
     for x in range(0, extraLength): whiteSpace += ' '
     colorText = ''
-    currentValue = sensor['value']
-    if type(currentValue) is float:
-        currentValue = int(currentValue)
+    currentValue = formatter.formatNumber(sensor['value'])
+    #if type(currentValue) is float:
+    #    currentValue = int(currentValue)
 
     if colorSwitch == True: colorText = 'color=#333333'
     if colorSwitch == False: colorText = 'color=#666666'
