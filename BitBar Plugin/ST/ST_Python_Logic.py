@@ -7,6 +7,7 @@ import ConfigParser
 import os
 import re
 import decimal
+import time
 
 # Define class for formatting numerical outputs (temp sensors)
 # Define NumberFormatter class
@@ -81,14 +82,23 @@ lockURL = smartAppURL + "ToggleLock/?id="
 callbackScript = sys.argv[1]
 
 # Make the call the to the API and retrive JSON data
-try:
-    output = check_output(['curl', '-s', statusURL, '-H', 'Authorization: Bearer ' + secret])
-except subprocess.CalledProcessError as grepexc:
-    print "No Connection"
-    print "---"
-    print "Please check connection and try again"
-    print "Debug information: Error code ", grepexc.returncode, grepexc.output
-    raise SystemExit(0)
+attempt = 0
+maxRetries = 10
+connected = False
+while connected is False:
+	try:
+		output = check_output(['curl', '-s', statusURL, '-H', 'Authorization: Bearer ' + secret])
+		connected = True
+	except subprocess.CalledProcessError as grepexc:
+		attempt += 1
+		if attempt == maxRetries:
+			print "No Connection"
+			print "---"
+			print "Please check connection and try again (⌘R)"
+			print "Debug information: Error code ", grepexc.returncode, grepexc.output
+			raise SystemExit(0)
+		time.sleep(3)
+		continue
 
 # Parse the JSON data
 j = json.loads(output)
