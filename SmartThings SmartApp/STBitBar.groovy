@@ -18,6 +18,7 @@
  // V 1.1 Added logging from @kurtsanders making it easier to copy/paste URL and secret
  // V 1.2 Add extra handling if Main Display is not set (right now N/A is displayed)
  // V 1.3 Add Lock capability support
+ // V 1.4 Add Thermostat selection and battery data output
  
 definition(
     name: "BitBar Output App",
@@ -166,12 +167,17 @@ def toggleLock() {
     log.debug "Hey there now! We didn't find a lock with id ${command}. Uh Oh..."
 }
 
+def getBatteryInfo(dev) {
+	if(dev.currentBattery) return "${dev.currentBattery}%"
+    else return "N/A"
+}
+
 // Respond to data requests
 def getTempData() {
 	log.debug "getTemps called"
 	def resp = []
     temps.each {
-        resp << [name: it.displayName, value: it.currentTemperature];
+        resp << [name: it.displayName, value: it.currentTemperature, battery: getBatteryInfo(it)];
     }
     // Sort decending by temp value
     resp.sort { -it.value }
@@ -181,7 +187,7 @@ def getTempData() {
 def getContactData() {
 	def resp = []
     contacts.each {
-        resp << [name: it.displayName, value: it.currentContact];
+        resp << [name: it.displayName, value: it.currentContact, battery: getBatteryInfo(it)];
     }
     return resp
 }
@@ -202,7 +208,15 @@ def getSwitchData() {
 def getLockData() {
 	def resp = []
     locks.each {
-        resp << [name: it.displayName, value: it.currentLock, id : it.id];
+        resp << [name: it.displayName, value: it.currentLock, id : it.id, battery: getBatteryInfo(it)];
+    }
+    return resp
+}
+def getThermoData() {
+
+	def resp = []
+    if(thermo) {
+    	resp << [thermostatOperatingState: thermo.currentThermostatOperatingState];
     }
     return resp
 }
@@ -225,12 +239,14 @@ def tempData = getTempData()
 def contactData = getContactData()
 def switchData = getSwitchData()
 def lockData = getLockData()
+def thermoData = getThermoData()
 def mainDisplay = getMainDisplayData()
 
 def resp = [ "Temp Sensors" : tempData,
 			 "Contact Sensors" : contactData,
              "Switches" : switchData,
              "Locks" : lockData,
+             "Thermostat" : thermoData,
              "MainDisplay" : mainDisplay]
 
 log.debug "getStatus complete"
@@ -329,6 +345,11 @@ def devicesPage() {
 			input "locks", "capability.lock",
 				title: "Which Locks?",
 				multiple: true,
+				hideWhenEmpty: true,
+				required: false	
+			input "thermo", "capability.thermostat",
+				title: "Which Thermostat?",
+				multiple: false,
 				hideWhenEmpty: true,
 				required: false	
 		}

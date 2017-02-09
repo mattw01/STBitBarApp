@@ -32,6 +32,9 @@ class NumberFormatter:
 			else: return str(r)
 # End NumberFormatter
 
+def formatPercentage(val):
+	if type(val) is int: return str(val) + "%"
+	else: return val
 
 # Read User Config File
 config = ConfigParser.ConfigParser()
@@ -107,17 +110,28 @@ contacts = j['Contact Sensors']
 switches = j['Switches']
 mainDisplay = j['MainDisplay']
 locks = j['Locks']
+thermostat = j['Thermostat']
 
 # Create a new NumberFormatter object
 formatter = NumberFormatter()
 # Set the number of decimals
 formatter.setRoundingPrecision(numberOfDecimals)
 
+
+# Format thermostat status color
+thermoColor = ''
+if len(thermostat) > 0:
+	if "thermostatOperatingState" in thermostat[0]:
+		if thermostat[0]['thermostatOperatingState'] == "heating":
+			thermoColor = "|color=red"
+		if thermostat[0]['thermostatOperatingState'] == "cooling":
+			thermoColor = "|color=blue"
+
 # Print the main display
 if mainDisplay[0]['name'] == None:
     print formatter.formatNumber(mainDisplay[0]['value'])
 else:
-    print mainDisplay[0]['name'], ":", formatter.formatNumber(mainDisplay[0]['value'])
+    print mainDisplay[0]['name'], ":", formatter.formatNumber(mainDisplay[0]['value']), thermoColor
 
 # Find the max length sensor so values are lined up correctly
 maxLength = 0
@@ -167,6 +181,8 @@ for sensor in temps:
     if colorSwitch == True: colorText = 'color=#333333'
     if colorSwitch == False: colorText = 'color=#666666'
     print sensor['name'], whiteSpace, currentValue, '|font=Menlo', colorText
+    if "battery" in sensor:
+    	print sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true",colorText
     colorSwitch = not colorSwitch
 
 # Output Contact Sensors
@@ -175,7 +191,7 @@ for sensor in contacts:
     currentLength = len(sensor['name'])
     extraLength = maxLength - currentLength
     whiteSpace = ''
-    for x in range(0, extraLength - 1): whiteSpace += ' '
+    for x in range(0, extraLength): whiteSpace += ' '
     sym = ''
     if sensor['value'] == 'closed':
         sym = '⇢⇠'
@@ -184,6 +200,8 @@ for sensor in contacts:
     if colorSwitch == True: colorText = 'color=#333333'
     if colorSwitch == False: colorText = 'color=#666666'
     print sensor['name'], whiteSpace, sym, '|font=Menlo', colorText
+    if "battery" in sensor:
+    	print sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true",colorText
     colorSwitch = not colorSwitch
 
 # Set base64 images for status green/red
@@ -246,3 +264,5 @@ for sensor in locks:
 		print sensor['name'], '|font=Menlo bash=', callbackScript, ' param1=request param2=', currentLockURL, ' param3=', secret, ' terminal=false refresh=true image=', img
 	else:
 		print sensor['name'], whiteSpace, sym, '|font=Menlo bash=', callbackScript, ' param1=request param2=', currentLockURL, ' param3=', secret, ' terminal=false refresh=true'
+	if "battery" in sensor:
+		print sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true"
