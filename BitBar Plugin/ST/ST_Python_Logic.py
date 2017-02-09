@@ -37,6 +37,24 @@ def formatPercentage(val):
 	if type(val) is int: return str(val) + "%"
 	else: return val
 
+def numberToColorGrad(val, color):
+	if color == 'red':
+		if val == 5: return "#E50008"
+		if val == 4: return "#EB1B20"
+		if val == 3: return "#F23739"
+		if val == 2: return "#F85352"
+		if val == 1: return "#FF6F6B"
+		if val == 0: return "#FF757A"
+	if color == 'blue':
+		if val == 5: return "#002FE5"
+		if val == 4: return "#1745EA"
+		if val == 3: return "#2E5BEF"
+		if val == 2: return "#4671F4"
+		if val == 1: return "#5D87F9"
+		if val == 0: return "#759DFF"
+	return "green"
+
+
 # Read User Config File
 config = ConfigParser.ConfigParser()
 # Read SmartApp URL and Secret
@@ -174,6 +192,55 @@ else: formatter.setStaticDecimalPlaces(-1)
 print '---'
 
 # Begin outputting sensor data
+if len(thermostat) > 0:
+	if "thermostatOperatingState" in thermostat[0]:
+		setpointText = ''
+		if thermostat[0]['thermostatMode'] == 'cool':
+			setpointText = "(" + str(thermostat[0]['coolingSetpoint']) + ")"
+		if thermostat[0]['thermostatMode'] == 'heat':
+			setpointText = "(" + str(thermostat[0]['heatingSetpoint']) + ")"
+		print "Thermostat Control",setpointText
+		if "thermostatMode" in thermostat[0]:
+			print "--Mode:",thermostat[0]['thermostatMode']
+		if "thermostatOperatingState" in thermostat[0]:
+			print "--Status:",thermostat[0]['thermostatOperatingState']
+		if "lastOperationEvent" in thermostat[0]:
+			timespan = thermostat[0]['lastOperationEvent']
+			seconds=(timespan/1000)%60
+			minutes=(timespan/(1000*60))%60
+			hours=(timespan/(1000*60*60))%24
+			timspanString = str(hours) + ":" + str(minutes) + ":" + str(seconds)
+			print "--Last Event:", timspanString
+		# Mode Menu
+		if "thermostatMode" in thermostat[0]:
+			print "--Mode"
+			print "----Auto"
+			print "----Heat"
+			print "----Cool"
+			print "----Off"
+		# Cooling Setpoint Menu
+		if "coolingSetpoint" in thermostat[0]:
+			currentCoolingSetPoint = thermostat[0]['coolingSetpoint']
+			print "--Cooling Set Point|color=blue"
+			print "----Change Setpoint|size=9"
+			for c in range(currentCoolingSetPoint - 5, currentCoolingSetPoint):
+				id = currentCoolingSetPoint - c
+				print "----",c,"|color=blue font=Helvetica-Bold color=",numberToColorGrad(id, "blue")
+			print "----", currentCoolingSetPoint,"(current)|color=",numberToColorGrad(0, "blue")
+			for c in range(currentCoolingSetPoint + 1, currentCoolingSetPoint + 6):
+				print "----",c,"|color=gray font=Helvetica-Bold"
+		# Heating Setpoint Menu	
+		if "heatingSetpoint" in thermostat[0]:
+			currentHeatingSetPoint = thermostat[0]['heatingSetpoint']
+			print "--Heating Set Point|color=red"
+			print "----Change Setpoint|size=9"
+			for c in range(currentHeatingSetPoint + 5, currentHeatingSetPoint, -1):
+				id = c - currentHeatingSetPoint
+				print "----",c,"|color=red font=Helvetica-Bold color=",numberToColorGrad(id, "red")
+			print "----", currentHeatingSetPoint,"(current)|color=",numberToColorGrad(0, "red")
+			for c in range(currentHeatingSetPoint - 1, currentHeatingSetPoint - 6, -1):
+				print "----",c,"|color=gray font=Helvetica-Bold"
+
 
 # Output Temp Sensors
 if len(temps) > 0: print "Temp Sensors|font=Helvetica-Bold color=black size=15"
@@ -276,3 +343,6 @@ for sensor in locks:
 		print sensor['name'], whiteSpace, sym, '|font=Menlo bash=', callbackScript, ' param1=request param2=', currentLockURL, ' param3=', secret, ' terminal=false refresh=true'
 	if "battery" in sensor:
 		print sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true"
+		
+		
+#print output

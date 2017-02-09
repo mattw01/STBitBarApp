@@ -108,7 +108,13 @@ def updated() {
 }
 
 def initialize() {
+	if(thermo)
+		subscribe(thermo, "thermostat.thermostatOperatingState", thermostatOperatingStateHandler)
+    state.lastThermostatOperatingState = now()
 	// TODO: subscribe to attributes, devices, locations, etc.
+}
+def thermostatOperatingStateHandler(evt) {
+	state.lastThermostatOperatingState = now()
 }
 
 
@@ -216,7 +222,13 @@ def getThermoData() {
 
 	def resp = []
     if(thermo) {
-    	resp << [thermostatOperatingState: thermo.currentThermostatOperatingState];
+    	def timespan = now() - state.lastThermostatOperatingState
+    	resp << [thermostatOperatingState: thermo.currentThermostatOperatingState,
+        		thermostatMode: thermo.currentThermostatMode,
+                coolingSetpoint: thermo.currentCoolingSetpoint,
+                heatingSetpoint: thermo.currentHeatingSetpoint,
+                lastOperationEvent: timespan
+                ];
     }
     return resp
 }
