@@ -17,6 +17,7 @@
  // V 1.0 Initial release
  // V 1.1 Added logging from @kurtsanders making it easier to copy/paste URL and secret
  // V 1.2 Add extra handling if Main Display is not set (right now N/A is displayed)
+ // V 1.3 Add Lock capability support
  
 definition(
     name: "BitBar Output App",
@@ -66,6 +67,11 @@ mappings {
   path("/SetLevel/") {
     action: [
       GET: "setLevel"
+    ]
+  }
+  path("/ToggleLock/") {
+    action: [
+      GET: "toggleLock"
     ]
   }
 }
@@ -140,6 +146,25 @@ def setLevel() {
     }
     log.debug "Good Goolly Miss Molly! We didn't find a switch with id ${command}. Uh Oh..."
 }
+def toggleLock() {
+	def command = params.id
+	log.debug "toggleLock called with id ${command}"
+    
+    locks.each {
+    	if(it.id == command)
+        {
+        	log.debug "Found lock ${it.displayName} with id ${it.id} with current value ${it.currentLock}"
+            if(it.currentLock == "locked")
+            	it.unlock()
+            else if(it.currentLock == "unlocked")
+            	it.lock()
+            else
+            	log.debug "Non-supported toggle state for lock ${it.displayName} state ${it.currentLock} let's not do anything"
+            return
+		}
+    }
+    log.debug "Hey there now! We didn't find a lock with id ${command}. Uh Oh..."
+}
 
 // Respond to data requests
 def getTempData() {
@@ -174,6 +199,13 @@ def getSwitchData() {
     }
     return resp
 }
+def getLockData() {
+	def resp = []
+    locks.each {
+        resp << [name: it.displayName, value: it.currentLock, id : it.id];
+    }
+    return resp
+}
 def getMainDisplayData() {
 	def returnName;
     def returnValue;
@@ -192,11 +224,13 @@ log.debug "getStatus called"
 def tempData = getTempData()
 def contactData = getContactData()
 def switchData = getSwitchData()
+def lockData = getLockData()
 def mainDisplay = getMainDisplayData()
 
 def resp = [ "Temp Sensors" : tempData,
 			 "Contact Sensors" : contactData,
              "Switches" : switchData,
+             "Locks" : lockData,
              "MainDisplay" : mainDisplay]
 
 log.debug "getStatus complete"
@@ -291,12 +325,16 @@ def devicesPage() {
 				title: "Which Switches?",
 				multiple: true,
 				hideWhenEmpty: true,
-				required: false		             			
+				required: false	
+			input "locks", "capability.lock",
+				title: "Which Locks?",
+				multiple: true,
+				hideWhenEmpty: true,
+				required: false	
 		}
 
 	}
 }
-
 
 
 private initializeAppEndpoint() {	
