@@ -2,7 +2,7 @@
 SmartThings BitBar App
 
 ## Overview:
-Monitor SmartThings sensors from the Apple OSX Menu Bar. Currently it works for displaying temperature and contact sensors, and controlling switch/dimmer level devices. This is all I really need, but there’s definitely more possibilities (presence sensors, controlling thermostats, etc). If there’s interest I can add more devices and features, or anyone in the community is welcome to modifying it.
+Monitor SmartThings sensors from the Apple OSX Menu Bar. Currently it works for displaying temperature and contact sensors, and controlling switch/dimmer level devices and locks. This is all I really need, but there’s definitely more possibilities (presence sensors, controlling thermostats, etc). If there’s interest I can add more devices and features, or anyone in the community is welcome to modifying it.
 
 ## Section 1: Installation:
 Section 1: Making the SmartApp available via the IDE
