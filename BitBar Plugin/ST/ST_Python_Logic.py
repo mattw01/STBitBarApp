@@ -19,7 +19,9 @@ class NumberFormatter:
 	def setStaticDecimalPlaces(self, places):
 		self.staticDecimalPlaces = places
 	def getNumberOfDecimals(self, number):
-		return abs(decimal.Decimal(str(number)).as_tuple().exponent)
+		r = round(number, self.decmialRounding)
+		if r % 1 == 0: return 0
+		return abs(decimal.Decimal(str(r)).as_tuple().exponent)
 	def formatNumber(self, number):
 		r = round(number, self.decmialRounding)
 		if self.staticDecimalPlaces is not -1:
@@ -33,6 +35,7 @@ class NumberFormatter:
 
 # Read User Config File
 config = ConfigParser.ConfigParser()
+# Read SmartApp URL and Secret
 try:
     config.read(sys.argv[0][:-2] + "cfg")
     smartAppURL = re.sub(r'^"|"$', '', config.get('My Section', 'smartAppURL'))
@@ -40,11 +43,13 @@ try:
 except:
     print "Fatal Error: Error in config file syntax"
     exit(99)
+# Read Use Images
 try:
     useImages = re.sub(r'^"|"$', '', config.get('My Section', 'useImages'))
 except ConfigParser.NoOptionError:
     useImages = True
     pass
+# Read Temperature Formatting Settings
 try:
     numberOfDecimals = int(re.sub(r'^"|"$', '', config.get('My Section', 'numberOfDecimals')))
 except ConfigParser.NoOptionError:
@@ -53,8 +58,9 @@ except ConfigParser.NoOptionError:
 try:
     matchOutputNumberOfDecimals = re.sub(r'^"|"$', '', config.get('My Section', 'matchOutputNumberOfDecimals'))
 except ConfigParser.NoOptionError:
-    matchOutputNumberOfDecimals = False
+    matchOutputNumberOfDecimals = 'False'
     pass
+# End Read User Config File
 
 # Set URLs
 statusURL = smartAppURL + "GetStatus/"
@@ -124,7 +130,8 @@ for sensor in switches:
 # Increment maxLength by one since contact sensor icon needs to be pulled back a little
 maxLength += 1
 
-if matchOutputNumberOfDecimals is True:
+# Set the static amount of decimal places based on setting
+if matchOutputNumberOfDecimals == 'True':
 	formatter.setStaticDecimalPlaces(maxDecimals)
 else: formatter.setStaticDecimalPlaces(-1)
 
