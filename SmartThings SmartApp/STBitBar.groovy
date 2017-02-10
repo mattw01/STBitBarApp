@@ -20,8 +20,9 @@
  // V 1.3 Add Lock capability support
  // V 1.4 Add Thermostat selection and battery data output
  // V 1.5 Add Thermostat control options and version verification
+ // V 1.6 Merge changes from @kurtsanders adding presence and motion capability
  
-def version() { return "v1.5" }
+def version() { return "v1.6" }
 definition(
     name: "BitBar Output App",
     namespace: "mattwz",

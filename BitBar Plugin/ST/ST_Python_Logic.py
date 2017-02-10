@@ -10,7 +10,7 @@ import time
 
 ##################################
 # Set Required SmartApp Version
-requiredVersion = 'v1.5'
+requiredVersion = 'v1.6'
 ##################################
 
 
