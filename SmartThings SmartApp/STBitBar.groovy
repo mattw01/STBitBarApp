@@ -356,6 +356,9 @@ private mainPage() {
         section("Device Setup") {
         href name: "devicesPageLink", title: "Select Devices", description: "", page: "devicesPage"
         }
+        section("Version Information") {
+        	paragraph "ST BitBar Output SmartApp Version: " + version()
+        }
 	}
 }
 
