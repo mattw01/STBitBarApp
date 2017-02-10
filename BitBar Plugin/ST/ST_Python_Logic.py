@@ -330,7 +330,7 @@ if len(thermostat) > 0:
 		# Cooling Setpoint Menu
 		if "coolingSetpoint" in thermostat[0]:
 			coolSetpointURL = currentThermoURL + "&type=coolingSetpoint&val="
-			currentCoolingSetPoint = thermostat[0]['coolingSetpoint']
+			currentCoolingSetPoint = int(thermostat[0]['coolingSetpoint'])
 			print "--Cooling Set Point (" + str(currentCoolingSetPoint) + degree_symbol + ")|color=blue"
 			print "----Change Setpoint|size=9"
 			for c in range(currentCoolingSetPoint - 5, currentCoolingSetPoint):
@@ -344,7 +344,7 @@ if len(thermostat) > 0:
 		# Heating Setpoint Menu	
 		if "heatingSetpoint" in thermostat[0]:
 			heatingSetpointURL = currentThermoURL + "&type=heatingSetpoint&val="
-			currentHeatingSetPoint = thermostat[0]['heatingSetpoint']
+			currentHeatingSetPoint = int(thermostat[0]['heatingSetpoint'])
 			print "--Heating Set Point (" + str(currentHeatingSetPoint) + degree_symbol + ")|color=red"
 			print "----Change Setpoint|size=9"
 			for c in range(currentHeatingSetPoint + 5, currentHeatingSetPoint, -1):
