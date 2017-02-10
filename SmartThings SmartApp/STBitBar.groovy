@@ -19,7 +19,9 @@
  // V 1.2 Add extra handling if Main Display is not set (right now N/A is displayed)
  // V 1.3 Add Lock capability support
  // V 1.4 Add Thermostat selection and battery data output
+ // V 1.5 Add Thermostat control options and version verification
  
+def version() { return "v1.5" }
 definition(
     name: "BitBar Output App",
     namespace: "mattwz",
@@ -70,6 +72,11 @@ mappings {
       GET: "setLevel"
     ]
   }
+    path("/SetThermo/") {
+    action: [
+      GET: "setThermo"
+    ]
+  }
   path("/ToggleLock/") {
     action: [
       GET: "toggleLock"
@@ -103,17 +110,16 @@ def updated() {
 
 	unsubscribe()
 	initialize()
-	unsubscribe()
-	initialize()
 }
 
 def initialize() {
 	if(thermo)
-		subscribe(thermo, "thermostat.thermostatOperatingState", thermostatOperatingStateHandler)
+		subscribe(thermo, "thermostatOperatingState", thermostatOperatingStateHandler)
     state.lastThermostatOperatingState = now()
 	// TODO: subscribe to attributes, devices, locations, etc.
 }
 def thermostatOperatingStateHandler(evt) {
+	log.debug "thermostatOperatingStateHandler received event" 
 	state.lastThermostatOperatingState = now()
 }
 
@@ -152,6 +158,43 @@ def setLevel() {
 		}
     }
     log.debug "Good Goolly Miss Molly! We didn't find a switch with id ${command}. Uh Oh..."
+}
+def setThermo() {
+	def id = params.id
+    def cmdType = params.type
+    def val = params.val
+	log.debug "setThermo called with id ${id} command ${cmdType} and value ${cmdType}"
+    
+    if(thermo) {
+    	if(thermo.id == id) {
+        	if(cmdType == "mode") {
+            	if(val == "auto") {
+                	log.debug "Setting thermo to auto"
+                    thermo.auto()
+                }
+            	if(val == "heat") {
+                	log.debug "Setting thermo to heat"
+                    thermo.heat()
+                }
+            	if(val == "cool") {
+                	log.debug "Setting thermo to cool"
+                    thermo.cool()
+                }
+            	if(val == "off") {
+                	log.debug "Setting thermo to off"
+                    thermo.off()
+                }
+            }
+        	if(cmdType == "heatingSetpoint") {
+            	log.debug "Setting Heat Setpoint to ${val}"
+            	thermo.setHeatingSetpoint(val)
+            }
+        	if(cmdType == "coolingSetpoint") {
+            	log.debug "Setting Cool Setpoint to ${val}"
+            	thermo.setCoolingSetpoint(val)
+            }
+        }
+    }
 }
 def toggleLock() {
 	def command = params.id
@@ -223,7 +266,9 @@ def getThermoData() {
 	def resp = []
     if(thermo) {
     	def timespan = now() - state.lastThermostatOperatingState
-    	resp << [thermostatOperatingState: thermo.currentThermostatOperatingState,
+    	resp << [displayName: thermo.displayName,
+        		id: thermo.id,
+        		thermostatOperatingState: thermo.currentThermostatOperatingState,
         		thermostatMode: thermo.currentThermostatMode,
                 coolingSetpoint: thermo.currentCoolingSetpoint,
                 heatingSetpoint: thermo.currentHeatingSetpoint,
@@ -254,7 +299,8 @@ def lockData = getLockData()
 def thermoData = getThermoData()
 def mainDisplay = getMainDisplayData()
 
-def resp = [ "Temp Sensors" : tempData,
+def resp = [ "Version" : version(),
+			 "Temp Sensors" : tempData,
 			 "Contact Sensors" : contactData,
              "Switches" : switchData,
              "Locks" : lockData,
