@@ -329,32 +329,34 @@ if len(thermostat) > 0:
 			print "----Off|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "off" + " param3=" + secret 
 		# Cooling Setpoint Menu
 		if "coolingSetpoint" in thermostat[0]:
-			coolSetpointURL = currentThermoURL + "&type=coolingSetpoint&val="
-			currentCoolingSetPoint = int(thermostat[0]['coolingSetpoint'])
-			print "--Cooling Set Point (" + str(currentCoolingSetPoint) + degree_symbol + ")|color=blue"
-			print "----Change Setpoint|size=9"
-			for c in range(currentCoolingSetPoint - 5, currentCoolingSetPoint):
-				id = currentCoolingSetPoint - c
-				print "----",str(c)+degree_symbol,"|color=blue font=Helvetica-Bold color=",numberToColorGrad(id, "blue"),\
-				"bash=", callbackScript, " param1=request param2=", str(coolSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
-			print "----", str(currentCoolingSetPoint)+degree_symbol,"(current)|color=",numberToColorGrad(0, "blue")
-			for c in range(currentCoolingSetPoint + 1, currentCoolingSetPoint + 6):
-				print "----",str(c)+degree_symbol,"|color=gray font=Helvetica-Bold",\
-				"bash=", callbackScript, " param1=request param2=", str(coolSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
+			if thermostat[0]['coolingSetpoint'] != None:
+				coolSetpointURL = currentThermoURL + "&type=coolingSetpoint&val="
+				currentCoolingSetPoint = int(thermostat[0]['coolingSetpoint'])
+				print "--Cooling Set Point (" + str(currentCoolingSetPoint) + degree_symbol + ")|color=blue"
+				print "----Change Setpoint|size=9"
+				for c in range(currentCoolingSetPoint - 5, currentCoolingSetPoint):
+					id = currentCoolingSetPoint - c
+					print "----",str(c)+degree_symbol,"|color=blue font=Helvetica-Bold color=",numberToColorGrad(id, "blue"),\
+					"bash=", callbackScript, " param1=request param2=", str(coolSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
+				print "----", str(currentCoolingSetPoint)+degree_symbol,"(current)|color=",numberToColorGrad(0, "blue")
+				for c in range(currentCoolingSetPoint + 1, currentCoolingSetPoint + 6):
+					print "----",str(c)+degree_symbol,"|color=gray font=Helvetica-Bold",\
+					"bash=", callbackScript, " param1=request param2=", str(coolSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
 		# Heating Setpoint Menu	
 		if "heatingSetpoint" in thermostat[0]:
-			heatingSetpointURL = currentThermoURL + "&type=heatingSetpoint&val="
-			currentHeatingSetPoint = int(thermostat[0]['heatingSetpoint'])
-			print "--Heating Set Point (" + str(currentHeatingSetPoint) + degree_symbol + ")|color=red"
-			print "----Change Setpoint|size=9"
-			for c in range(currentHeatingSetPoint + 5, currentHeatingSetPoint, -1):
-				id = c - currentHeatingSetPoint
-				print "----",str(c)+degree_symbol,"|color=red font=Helvetica-Bold color=",numberToColorGrad(id, "red"),\
-				"bash=", callbackScript, " param1=request param2=", str(heatingSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
-			print "----", str(currentHeatingSetPoint)+degree_symbol,"(current)|color=",numberToColorGrad(0, "red")
-			for c in range(currentHeatingSetPoint - 1, currentHeatingSetPoint - 6, -1):
-				print "----",str(c)+degree_symbol,"|color=gray font=Helvetica-Bold",\
-				"bash=", callbackScript, " param1=request param2=", str(heatingSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
+			if thermostat[0]['heatingSetpoint'] != None:
+				heatingSetpointURL = currentThermoURL + "&type=heatingSetpoint&val="
+				currentHeatingSetPoint = int(thermostat[0]['heatingSetpoint'])
+				print "--Heating Set Point (" + str(currentHeatingSetPoint) + degree_symbol + ")|color=red"
+				print "----Change Setpoint|size=9"
+				for c in range(currentHeatingSetPoint + 5, currentHeatingSetPoint, -1):
+					id = c - currentHeatingSetPoint
+					print "----",str(c)+degree_symbol,"|color=red font=Helvetica-Bold color=",numberToColorGrad(id, "red"),\
+					"bash=", callbackScript, " param1=request param2=", str(heatingSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
+				print "----", str(currentHeatingSetPoint)+degree_symbol,"(current)|color=",numberToColorGrad(0, "red")
+				for c in range(currentHeatingSetPoint - 1, currentHeatingSetPoint - 6, -1):
+					print "----",str(c)+degree_symbol,"|color=gray font=Helvetica-Bold",\
+					"bash=", callbackScript, " param1=request param2=", str(heatingSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
 
 
 # Output Temp Sensors
