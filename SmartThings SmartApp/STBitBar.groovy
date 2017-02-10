@@ -54,6 +54,12 @@ preferences {
   section ("Allow external service to get the thermostat status ...") {
     input "thermos", "capability.thermostat", multiple: true, required: false
   }
+  section ("Allow external service to get the motion status ...") {
+    input "motions", "capability.motionSensor", multiple: true, required: false
+  }
+  section ("Allow external service to get the presence status ...") {
+    input "presences", "capability.presenceSensor", multiple: true, required: false
+  }
 }
 mappings {
 
@@ -240,6 +246,20 @@ def getContactData() {
     }
     return resp
 }
+def getPresenceData() {
+	def resp = []
+    presences.each {
+        resp << [name: it.displayName, value: it.currentPresence];
+    }
+    return resp
+}
+def getMotionData() {
+	def resp = []
+    motions.each {
+        resp << [name: it.displayName, value: it.currentMotion];
+    }
+    return resp
+}
 def getSwitchData() {
 	def resp = []
     switches.each {
@@ -294,6 +314,8 @@ def getStatus() {
 log.debug "getStatus called"
 def tempData = getTempData()
 def contactData = getContactData()
+def presenceData = getPresenceData()
+def motionData = getMotionData()
 def switchData = getSwitchData()
 def lockData = getLockData()
 def thermoData = getThermoData()
@@ -302,6 +324,8 @@ def mainDisplay = getMainDisplayData()
 def resp = [ "Version" : version(),
 			 "Temp Sensors" : tempData,
 			 "Contact Sensors" : contactData,
+			 "Presence Sensors" : presenceData,
+			 "Motion Sensors" : motionData,
              "Switches" : switchData,
              "Locks" : lockData,
              "Thermostat" : thermoData,
@@ -395,6 +419,11 @@ def devicesPage() {
 				multiple: true,
 				hideWhenEmpty: true,
 				required: false                
+			input "motions", "capability.motionSensor",
+				title: "Which Motion Sensors?",
+				multiple: true,
+				hideWhenEmpty: true,
+				required: false                
 			input "switches", "capability.switch",
 				title: "Which Switches?",
 				multiple: true,
@@ -405,6 +434,11 @@ def devicesPage() {
 				multiple: true,
 				hideWhenEmpty: true,
 				required: false	
+			input "presences", "capability.presenceSensor",
+				title: "Which Presence Sensors?",
+				multiple: true,
+				hideWhenEmpty: true,
+				required: false                
 			input "thermo", "capability.thermostat",
 				title: "Which Thermostat?",
 				multiple: false,
