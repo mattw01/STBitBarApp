@@ -515,8 +515,10 @@ if countSensors > 0:
         elif sensor['value'] == 'unlocked':
             sym = '🔓'
             img = redUnlocked
+        elif sensor['value'] == None:
+            sensor['name'] = sensor['name'] + "(No Status)"
         else:
-            sensor['name'] = sensor['name'] + "(" + sensor['value'] + ")"
+            sensor['name'] = sensor['name'] + "(" + str(sensor['value']) + ")"
         if i >= mainMenuMaxItems:
 			print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
 			print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
