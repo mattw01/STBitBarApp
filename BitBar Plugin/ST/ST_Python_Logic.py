@@ -57,7 +57,11 @@ def formatTimespan(ms):
 	timspanString = ''
 	if hours > 0: timspanString += str(hours) + " hour"
 	if hours > 1: timspanString += "s"
-	timspanString += " " + str(minutes) + " minute"
+	if hours == 0:
+	    if minutes == 0: timspanString += "less than a minute"
+	    if minutes == 1: timspanString += "a minute"
+	    if minutes > 1: timspanString += " " + str(minutes) + " minute"
+	else: timspanString += " " + str(minutes) + " minute"
 	if minutes > 1: timspanString += "s"
 	return timspanString
 # Return hex color code based on multiple step gradient (for thermo colors)
@@ -412,7 +416,7 @@ if countSensors > 0:
         currentLength = len(sensor['name'])
         extraLength = maxLength - currentLength
         whiteSpace = ''
-        for x in range(0, extraLength - 1): whiteSpace += ' '
+        for x in range(0, extraLength): whiteSpace += ' '
         sym = ''
         if sensor['value'] == 'closed':
             sym = '⇢⇠'
@@ -443,7 +447,7 @@ if countSensors > 0:
         currentLength = len(sensor['name'])
         extraLength = maxLength - currentLength
         whiteSpace = ''
-        for x in range(0, extraLength - 1): whiteSpace += ' '
+        for x in range(0, extraLength): whiteSpace += ' '
         sym = ''
         if sensor['value'] == 'inactive':
             sym = '⇢⇠'
@@ -473,7 +477,7 @@ if countSensors > 0:
         currentLength = len(sensor['name'])
         extraLength = maxLength - currentLength
         whiteSpace = ''
-        for x in range(0, extraLength - 1): whiteSpace += ' '
+        for x in range(0, extraLength): whiteSpace += ' '
         sym = ''
         if sensor['value'] == 'present':
             emoji = presenscePresentEmoji
@@ -508,7 +512,7 @@ if countSensors > 0:
         whiteSpace = ''
         img = ''
         sym = ''
-        for x in range(0, extraLength - 1): whiteSpace += ' '
+        for x in range(0, extraLength): whiteSpace += ' '
         if sensor['value'] == 'locked':
             sym = '🔒'
             img = greenLocked
