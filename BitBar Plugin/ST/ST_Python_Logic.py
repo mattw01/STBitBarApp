@@ -247,6 +247,8 @@ if mainDisplay[0]['name'] != None or mainDisplay[0]['name'] != "N/A":
 # Check if there is a value
 if type(mainDisplay[0]['value']) is int or type(mainDisplay[0]['value']) is float:
 	formattedMainDisplay += ":" + formatter.formatNumber(mainDisplay[0]['value']) + degree_symbol
+if formattedMainDisplay == '':
+	formattedMainDisplay = "ST BitBar"
 print formattedMainDisplay
 
 # Find the max length sensor so values are lined up correctly
