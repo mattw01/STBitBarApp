@@ -237,20 +237,17 @@ if len(thermostat) > 0:
 		if thermostat[0]['thermostatOperatingState'] == "cooling":
 			thermoColor = "|color=blue"
 
-# Print the main display
 
+# Print the main display
 degree_symbol = u'\xb0'.encode('utf8')
-if mainDisplay[0]['name'] == None or mainDisplay[0]['name'] == "N/A":
-    print "{}{}{}".format(
-        formatter.formatNumber(mainDisplay[0]['value']),
-        degree_symbol, thermoColor
-    )
-else:
-    print "{}:{}{}{}".format(
-        mainDisplay[0]['name'],
-        formatter.formatNumber(mainDisplay[0]['value']),
-        degree_symbol, thermoColor
-    )
+formattedMainDisplay = ''
+# Check if there is a name
+if mainDisplay[0]['name'] != None or mainDisplay[0]['name'] != "N/A":
+	formattedMainDisplay += str(mainDisplay[0]['name'])
+# Check if there is a value
+if type(mainDisplay[0]['value']) is int or type(mainDisplay[0]['value']) is float:
+	formattedMainDisplay += ":" + formatter.formatNumber(mainDisplay[0]['value']) + degree_symbol
+print formattedMainDisplay
 
 # Find the max length sensor so values are lined up correctly
 maxLength = 0
