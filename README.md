@@ -35,7 +35,7 @@ Section 1: Making the SmartApp available via the IDE
 3. There is no alignment supported by BitBar so it’s all done by character spacing, which means using monospace fonts. Which also means a limited selection of pretty looking fonts. Menlo works good enough for me, but feel free to change it.
 
 ## Misc Features / Tips
-# Hold Alt while menu is open to display battery information
-# Max items per sensor catagory can be set (if you want to save space but still have access to the sensors)
+* Hold Alt while menu is open to display battery information
+* Max items per sensor catagory can be set (if you want to save space but still have access to the sensors)
 
 I’m open to any feedback or suggestions/features! Let me know what you think!
