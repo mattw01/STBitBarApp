@@ -110,7 +110,8 @@ cfgGetValue                 = cfgFileObj.get_setting
 smartAppURL                 = cfgGetValue('smartAppURL'     , ""    , True)
 secret                      = cfgGetValue('secret'          , ""    , True)
 useImages                   = cfgGetValue('useImages'       , True)
-sortSensors                 = cfgGetValue('sortSensors'       , True)
+sortSensors                 = cfgGetValue('sortSensors'     , True)
+showSensorCount             = cfgGetValue('showSensorCount' , True)
 presenscePresentEmoji       = cfgGetValue('presenscePresentEmoji'   , ":house:")
 presensceNotPresentEmoji    = cfgGetValue('presensceNotPresentEmoji', ":x:")
 
@@ -365,7 +366,8 @@ if len(thermostat) > 0:
 countSensors = len(temps)
 if countSensors > 0:
     menuTitle = "Temp Sensors"
-    mainTitle = menuTitle + " ("+str(countSensors)+")"
+    mainTitle = menuTitle 
+    if showSensorCount == True: mainTitle += " ("+str(countSensors)+")"
     print mainTitle, "| font=Helvetica-Bold color=black size=15"
     colorSwitch = False
     mainMenuMaxItems = mainMenuMaxItemsDict["Temps"]
@@ -392,7 +394,8 @@ if countSensors > 0:
 countSensors = len(contacts)
 if countSensors > 0:
     menuTitle = "Contact Sensors"
-    mainTitle = menuTitle + " ("+str(countSensors)+")"
+    mainTitle = menuTitle
+    if showSensorCount == True: mainTitle += " ("+str(countSensors)+")"
     print mainTitle,"|font=Helvetica-Bold color=black"
     mainMenuMaxItems = mainMenuMaxItemsDict["Contacts"]
     subMenuText =''
@@ -422,7 +425,8 @@ if countSensors > 0:
 countSensors = len(motion)
 if countSensors > 0:
     menuTitle = "Motion Sensors"
-    mainTitle = menuTitle + " ("+str(countSensors)+")"
+    mainTitle = menuTitle
+    if showSensorCount == True: mainTitle += " ("+str(countSensors)+")"
     print mainTitle,"|font=Helvetica-Bold color=black"
     mainMenuMaxItems = mainMenuMaxItemsDict["Motion"]
     subMenuText =''
@@ -451,7 +455,8 @@ if countSensors > 0:
 countSensors = len(presences)
 if countSensors > 0:
     menuTitle = "Presence Sensors"
-    mainTitle = menuTitle + " ("+str(countSensors)+")"
+    mainTitle = menuTitle
+    if showSensorCount == True: mainTitle += " ("+str(countSensors)+")"
     print mainTitle, "|font=Helvetica-Bold color=black"
     mainMenuMaxItems = mainMenuMaxItemsDict["Presences"]
     subMenuText = ''
@@ -482,7 +487,8 @@ redUnlocked = "iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAYAAACN1PRVAAAACXBIWXMAABYlAAAWJ
 countSensors = len(locks)
 if countSensors > 0:
     menuTitle = "Locks"
-    mainTitle = menuTitle + " ("+str(countSensors)+")"
+    mainTitle = menuTitle
+    if showSensorCount == True: mainTitle += " ("+str(countSensors)+")"
     print mainTitle,"|font=Helvetica-Bold color=black"
     mainMenuMaxItems = mainMenuMaxItemsDict["Locks"]
     subMenuText = ''
@@ -522,9 +528,13 @@ redImage = "iVBORw0KGgoAAAANSUhEUgAAABsAAAAbCAYAAACN1PRVAAAACXBIWXMAABR0AAAUdAG5
 # Output Switches
 countSensors = len(switches)
 if countSensors > 0:
-    menuTitle = "Switches ("+str(countSensors)+")"
-    print menuTitle,"|font=Helvetica-Bold color=black"
-    for sensor in switches:
+    menuTitle = "Switches"
+    mainTitle = menuTitle
+    if showSensorCount == True: mainTitle += " ("+str(countSensors)+")"
+    print mainTitle,"|font=Helvetica-Bold color=black"
+    mainMenuMaxItems = mainMenuMaxItemsDict["Switches"]
+    subMenuText = ''
+    for i, sensor in enumerate(switches):
         currentLength = len(sensor['name'])
         extraLength = maxLength - currentLength
         whiteSpace = ''
@@ -537,18 +547,22 @@ if countSensors > 0:
             sym = '🔴'
             img = redImage
         currentSwitchURL = switchURL + sensor['id']
+        if i == mainMenuMaxItems:
+			print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
+			print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
+			subMenuText = "--"       
         if useImages is True:
-            print sensor[
+            print subMenuText, sensor[
                 'name'], '|font=Menlo bash=', callbackScript, ' param1=request param2=', currentSwitchURL, ' param3=', secret, ' terminal=false refresh=true image=', img
         else:
-            print sensor[
+            print subMenuText, sensor[
                 'name'], whiteSpace, sym, '|font=Menlo bash=', callbackScript, ' param1=request param2=', currentSwitchURL, ' param3=', secret, ' terminal=false refresh=true'
         if sensor['isDimmer'] is True:
-            print '-- Set Dimmer Level|size=9'
+            print str(str(subMenuText) + "--"), 'Set Dimmer Level|size=9'
             currentLevel = 10
             while True:
                 currentLevelURL = levelURL + sensor['id'] + '&level=' + str(currentLevel)
-                print '-- ', currentLevel, '%| bash=', callbackScript, ' param1=request param2=', currentLevelURL, ' param3=', secret, ' terminal=false refresh=true'
+                print str(subMenuText + "--"), currentLevel, '%| bash=', callbackScript, ' param1=request param2=', currentLevelURL, ' param3=', secret, ' terminal=false refresh=true'
                 if currentLevel is 100:
                     break
                 currentLevel += 10
