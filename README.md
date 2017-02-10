@@ -2,7 +2,7 @@
 SmartThings BitBar App
 
 ## Overview:
-Monitor SmartThings sensors from the Apple OSX Menu Bar. Currently it works for displaying temperature and contact sensors, and controlling switch/dimmer level devices and locks. This is all I really need, but there’s definitely more possibilities (presence sensors, controlling thermostats, etc). If there’s interest I can add more devices and features, or anyone in the community is welcome to modifying it.
+Monitor SmartThings sensors from the Apple OSX Menu Bar. Currently it works for displaying temperature, contact, presence and motion sensors, and controlling switch/dimmer level devices, locks and also thermostat control. If there’s interest I can add more devices and features, or anyone in the community is welcome to modifying it.
 
 ## Section 1: Installation:
 Section 1: Making the SmartApp available via the IDE
@@ -33,5 +33,9 @@ Section 1: Making the SmartApp available via the IDE
 1. Calling cURL via Python is not the best thing to do, but I wanted to make it as simple as possible using the built-in Python available in macOS/OSX. It would be better to use the requests library, but this requires setting up a new Python installation.
 2. BitBar is capable of cycling through multiple status bar items, but all I really needed was to display one temperature sensor at the top with the rest in the dropdown. So the app only allows a selection of one temp sensor and a custom title (I didn’t want to use the full sensor name since menubar real estate is top dollar)
 3. There is no alignment supported by BitBar so it’s all done by character spacing, which means using monospace fonts. Which also means a limited selection of pretty looking fonts. Menlo works good enough for me, but feel free to change it.
+
+## Misc Features / Tips
+* Hold Alt while menu is open to display battery information
+* Max items per sensor catagory can be set in configuration file (if you want to save space but still have access to the sensors)
 
 I’m open to any feedback or suggestions/features! Let me know what you think!

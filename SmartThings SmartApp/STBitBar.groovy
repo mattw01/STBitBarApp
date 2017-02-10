@@ -18,7 +18,11 @@
  // V 1.1 Added logging from @kurtsanders making it easier to copy/paste URL and secret
  // V 1.2 Add extra handling if Main Display is not set (right now N/A is displayed)
  // V 1.3 Add Lock capability support
+ // V 1.4 Add Thermostat selection and battery data output
+ // V 1.5 Add Thermostat control options and version verification
+ // V 1.6 Merge changes from @kurtsanders adding presence and motion capability
  
+def version() { return "v1.6" }
 definition(
     name: "BitBar Output App",
     namespace: "mattwz",
@@ -51,6 +55,12 @@ preferences {
   section ("Allow external service to get the thermostat status ...") {
     input "thermos", "capability.thermostat", multiple: true, required: false
   }
+  section ("Allow external service to get the motion status ...") {
+    input "motions", "capability.motionSensor", multiple: true, required: false
+  }
+  section ("Allow external service to get the presence status ...") {
+    input "presences", "capability.presenceSensor", multiple: true, required: false
+  }
 }
 mappings {
 
@@ -67,6 +77,11 @@ mappings {
   path("/SetLevel/") {
     action: [
       GET: "setLevel"
+    ]
+  }
+    path("/SetThermo/") {
+    action: [
+      GET: "setThermo"
     ]
   }
   path("/ToggleLock/") {
@@ -102,12 +117,17 @@ def updated() {
 
 	unsubscribe()
 	initialize()
-	unsubscribe()
-	initialize()
 }
 
 def initialize() {
+	if(thermo)
+		subscribe(thermo, "thermostatOperatingState", thermostatOperatingStateHandler)
+    state.lastThermostatOperatingState = now()
 	// TODO: subscribe to attributes, devices, locations, etc.
+}
+def thermostatOperatingStateHandler(evt) {
+	log.debug "thermostatOperatingStateHandler received event" 
+	state.lastThermostatOperatingState = now()
 }
 
 
@@ -146,6 +166,43 @@ def setLevel() {
     }
     log.debug "Good Goolly Miss Molly! We didn't find a switch with id ${command}. Uh Oh..."
 }
+def setThermo() {
+	def id = params.id
+    def cmdType = params.type
+    def val = params.val
+	log.debug "setThermo called with id ${id} command ${cmdType} and value ${cmdType}"
+    
+    if(thermo) {
+    	if(thermo.id == id) {
+        	if(cmdType == "mode") {
+            	if(val == "auto") {
+                	log.debug "Setting thermo to auto"
+                    thermo.auto()
+                }
+            	if(val == "heat") {
+                	log.debug "Setting thermo to heat"
+                    thermo.heat()
+                }
+            	if(val == "cool") {
+                	log.debug "Setting thermo to cool"
+                    thermo.cool()
+                }
+            	if(val == "off") {
+                	log.debug "Setting thermo to off"
+                    thermo.off()
+                }
+            }
+        	if(cmdType == "heatingSetpoint") {
+            	log.debug "Setting Heat Setpoint to ${val}"
+            	thermo.setHeatingSetpoint(val)
+            }
+        	if(cmdType == "coolingSetpoint") {
+            	log.debug "Setting Cool Setpoint to ${val}"
+            	thermo.setCoolingSetpoint(val)
+            }
+        }
+    }
+}
 def toggleLock() {
 	def command = params.id
 	log.debug "toggleLock called with id ${command}"
@@ -166,12 +223,17 @@ def toggleLock() {
     log.debug "Hey there now! We didn't find a lock with id ${command}. Uh Oh..."
 }
 
+def getBatteryInfo(dev) {
+	if(dev.currentBattery) return "${dev.currentBattery}%"
+    else return "N/A"
+}
+
 // Respond to data requests
 def getTempData() {
 	log.debug "getTemps called"
 	def resp = []
     temps.each {
-        resp << [name: it.displayName, value: it.currentTemperature];
+        resp << [name: it.displayName, value: it.currentTemperature, battery: getBatteryInfo(it)];
     }
     // Sort decending by temp value
     resp.sort { -it.value }
@@ -181,7 +243,21 @@ def getTempData() {
 def getContactData() {
 	def resp = []
     contacts.each {
-        resp << [name: it.displayName, value: it.currentContact];
+        resp << [name: it.displayName, value: it.currentContact, battery: getBatteryInfo(it)];
+    }
+    return resp
+}
+def getPresenceData() {
+	def resp = []
+    presences.each {
+        resp << [name: it.displayName, value: it.currentPresence];
+    }
+    return resp
+}
+def getMotionData() {
+	def resp = []
+    motions.each {
+        resp << [name: it.displayName, value: it.currentMotion, battery: getBatteryInfo(it)];
     }
     return resp
 }
@@ -202,7 +278,23 @@ def getSwitchData() {
 def getLockData() {
 	def resp = []
     locks.each {
-        resp << [name: it.displayName, value: it.currentLock, id : it.id];
+        resp << [name: it.displayName, value: it.currentLock, id : it.id, battery: getBatteryInfo(it)];
+    }
+    return resp
+}
+def getThermoData() {
+
+	def resp = []
+    if(thermo) {
+    	def timespan = now() - state.lastThermostatOperatingState
+    	resp << [displayName: thermo.displayName,
+        		id: thermo.id,
+        		thermostatOperatingState: thermo.currentThermostatOperatingState,
+        		thermostatMode: thermo.currentThermostatMode,
+                coolingSetpoint: thermo.currentCoolingSetpoint,
+                heatingSetpoint: thermo.currentHeatingSetpoint,
+                lastOperationEvent: timespan
+                ];
     }
     return resp
 }
@@ -223,14 +315,21 @@ def getStatus() {
 log.debug "getStatus called"
 def tempData = getTempData()
 def contactData = getContactData()
+def presenceData = getPresenceData()
+def motionData = getMotionData()
 def switchData = getSwitchData()
 def lockData = getLockData()
+def thermoData = getThermoData()
 def mainDisplay = getMainDisplayData()
 
-def resp = [ "Temp Sensors" : tempData,
+def resp = [ "Version" : version(),
+			 "Temp Sensors" : tempData,
 			 "Contact Sensors" : contactData,
+			 "Presence Sensors" : presenceData,
+			 "Motion Sensors" : motionData,
              "Switches" : switchData,
              "Locks" : lockData,
+             "Thermostat" : thermoData,
              "MainDisplay" : mainDisplay]
 
 log.debug "getStatus complete"
@@ -256,6 +355,9 @@ private mainPage() {
 		}
         section("Device Setup") {
         href name: "devicesPageLink", title: "Select Devices", description: "", page: "devicesPage"
+        }
+        section("Version Information") {
+        	paragraph "ST BitBar Output SmartApp Version: " + version()
         }
 	}
 }
@@ -321,6 +423,11 @@ def devicesPage() {
 				multiple: true,
 				hideWhenEmpty: true,
 				required: false                
+			input "motions", "capability.motionSensor",
+				title: "Which Motion Sensors?",
+				multiple: true,
+				hideWhenEmpty: true,
+				required: false                
 			input "switches", "capability.switch",
 				title: "Which Switches?",
 				multiple: true,
@@ -329,6 +436,16 @@ def devicesPage() {
 			input "locks", "capability.lock",
 				title: "Which Locks?",
 				multiple: true,
+				hideWhenEmpty: true,
+				required: false	
+			input "presences", "capability.presenceSensor",
+				title: "Which Presence Sensors?",
+				multiple: true,
+				hideWhenEmpty: true,
+				required: false                
+			input "thermo", "capability.thermostat",
+				title: "Which Thermostat?",
+				multiple: false,
 				hideWhenEmpty: true,
 				required: false	
 		}
