@@ -277,8 +277,8 @@ if len(thermostat) > 0:
 		if "thermostatMode" in thermostat[0]:
 			print "--Mode"
 			print "----Auto|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "auto" + " param3=" + secret 
-			print "----Heat|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "heat" + " param3=" + secret 
 			print "----Cool|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "cool" + " param3=" + secret 
+			print "----Heat|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "heat" + " param3=" + secret 
 			print "----Off|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "off" + " param3=" + secret 
 		# Cooling Setpoint Menu
 		if "coolingSetpoint" in thermostat[0]:
