@@ -256,7 +256,7 @@ def getPresenceData() {
 def getMotionData() {
 	def resp = []
     motions.each {
-        resp << [name: it.displayName, value: it.currentMotion];
+        resp << [name: it.displayName, value: it.currentMotion, battery: getBatteryInfo(it)];
     }
     return resp
 }
