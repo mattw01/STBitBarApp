@@ -1,5 +1,6 @@
 #!/bin/bash
-
+BitBarDarkMode=${BitBarDarkMode}
+export BitBarDarkMode
 if [ $# -gt 0 ]
   then
   	if [ $1 = "request" ]

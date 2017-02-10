@@ -7,6 +7,7 @@ import ConfigParser
 import re
 import decimal
 import time
+import os
 
 ##################################
 # Set Required SmartApp Version
@@ -133,6 +134,17 @@ numberOfDecimals    = cfgGetValue('numberOfDecimals', "0")
 matchOutputNumberOfDecimals = cfgGetValue('matchOutputNumberOfDecimals', False)
 
 # End Read User Config File
+
+# Get the OS display mode (light or dark)
+isDarkMode = False
+try:
+    isDarkMode = bool(os.environ["BitBarDarkMode"])
+except:
+    pass
+
+titleColor = "black"
+if isDarkMode is True:
+    titleColor = "white"
 
 # Set URLs
 statusURL = smartAppURL + "GetStatus/"
@@ -309,7 +321,7 @@ if len(thermostat) > 0:
 		if "displayName" in thermostat[0]: 
 			print thermostat[0]['displayName'],setpointText,'|image=', thermoImage
 		else: print "Thermostat Control",setpointText,'|image=', thermoImage
-		print "--Current Status|font=Helvetica-Bold color=black size=14"
+		print "--Current Status|font=Helvetica-Bold color=" + titleColor + " size=14"
 		if "thermostatMode" in thermostat[0]:
 			print "--Mode:",thermostat[0]['thermostatMode']
 		if "thermostatOperatingState" in thermostat[0]:
@@ -317,7 +329,7 @@ if len(thermostat) > 0:
 		if "lastOperationEvent" in thermostat[0]:
 			timespan = thermostat[0]['lastOperationEvent']
 			print "--Last Event:", formatTimespan(timespan), "ago"
-		print "--Controls|font=Helvetica-Bold color=black size=14"
+		print "--Controls|font=Helvetica-Bold color=" + titleColor + " size=14"
 		currentThermoURL = thermoURL + thermostat[0]['id']
 		thermoModeURL = currentThermoURL + "&type=mode&val="
 		# Mode Menu
@@ -365,7 +377,7 @@ if countSensors > 0:
     menuTitle = "Temp Sensors"
     mainTitle = menuTitle 
     if showSensorCount == True: mainTitle += " ("+str(countSensors)+")"
-    print mainTitle, "| font=Helvetica-Bold color=black size=15"
+    print mainTitle, "| font=Helvetica-Bold color=" + titleColor + " size=15"
     colorSwitch = False
     mainMenuMaxItems = mainMenuMaxItemsDict["Temps"]
     subMenuText =''
@@ -393,7 +405,7 @@ if countSensors > 0:
     menuTitle = "Contact Sensors"
     mainTitle = menuTitle
     if showSensorCount == True: mainTitle += " ("+str(countSensors)+")"
-    print mainTitle,"|font=Helvetica-Bold color=black"
+    print mainTitle,"|font=Helvetica-Bold color=" + titleColor + " size=15"
     mainMenuMaxItems = mainMenuMaxItemsDict["Contacts"]
     subMenuText =''
     for i, sensor in enumerate(contacts):
@@ -424,7 +436,7 @@ if countSensors > 0:
     menuTitle = "Motion Sensors"
     mainTitle = menuTitle
     if showSensorCount == True: mainTitle += " ("+str(countSensors)+")"
-    print mainTitle,"|font=Helvetica-Bold color=black"
+    print mainTitle,"|font=Helvetica-Bold color=" + titleColor + " size=15"
     mainMenuMaxItems = mainMenuMaxItemsDict["Motion"]
     subMenuText =''
     for i, sensor in enumerate(motion):
@@ -454,7 +466,7 @@ if countSensors > 0:
     menuTitle = "Presence Sensors"
     mainTitle = menuTitle
     if showSensorCount == True: mainTitle += " ("+str(countSensors)+")"
-    print mainTitle, "|font=Helvetica-Bold color=black"
+    print mainTitle, "|font=Helvetica-Bold color=" + titleColor + " size=15"
     mainMenuMaxItems = mainMenuMaxItemsDict["Presences"]
     subMenuText = ''
     for i, sensor in enumerate(presences):
@@ -486,7 +498,7 @@ if countSensors > 0:
     menuTitle = "Locks"
     mainTitle = menuTitle
     if showSensorCount == True: mainTitle += " ("+str(countSensors)+")"
-    print mainTitle,"|font=Helvetica-Bold color=black"
+    print mainTitle,"|font=Helvetica-Bold color=" + titleColor + " size=15"
     mainMenuMaxItems = mainMenuMaxItemsDict["Locks"]
     subMenuText = ''
     for i, sensor in enumerate(locks):
@@ -528,7 +540,7 @@ if countSensors > 0:
     menuTitle = "Switches"
     mainTitle = menuTitle
     if showSensorCount == True: mainTitle += " ("+str(countSensors)+")"
-    print mainTitle,"|font=Helvetica-Bold color=black"
+    print mainTitle,"|font=Helvetica-Bold color=" + titleColor + " size=15"
     mainMenuMaxItems = mainMenuMaxItemsDict["Switches"]
     subMenuText = ''
     for i, sensor in enumerate(switches):
