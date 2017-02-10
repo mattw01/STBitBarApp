@@ -249,7 +249,7 @@ if type(mainDisplay[0]['value']) is int or type(mainDisplay[0]['value']) is floa
 	formattedMainDisplay += ":" + formatter.formatNumber(mainDisplay[0]['value']) + degree_symbol
 if formattedMainDisplay == '':
 	formattedMainDisplay = "ST BitBar"
-print formattedMainDisplay
+print formattedMainDisplay + thermoColor
 
 # Find the max length sensor so values are lined up correctly
 maxLength = 0
@@ -316,10 +316,6 @@ if len(thermostat) > 0:
 			print "--Status:",thermostat[0]['thermostatOperatingState']
 		if "lastOperationEvent" in thermostat[0]:
 			timespan = thermostat[0]['lastOperationEvent']
-			seconds=(timespan/1000)%60
-			minutes=(timespan/(1000*60))%60
-			hours=(timespan/(1000*60*60))%24
-			timspanString = str(hours) + ":" + str(minutes) + ":" + str(seconds)
 			print "--Last Event:", formatTimespan(timespan), "ago"
 		print "--Controls|font=Helvetica-Bold color=black size=14"
 		currentThermoURL = thermoURL + thermostat[0]['id']
