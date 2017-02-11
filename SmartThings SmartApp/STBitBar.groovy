@@ -22,9 +22,10 @@
  // V 1.5 Add Thermostat control options and version verification
  // V 1.6 Merge changes from @kurtsanders adding presence and motion capability
  // V 1.7 Added Routine changes capability from @kurtsanders
+ // V 1.8 Add multiple thermostat support
  
  
-def version() { return "v1.7" }
+def version() { return "v1.8" }
 definition(
     name: "BitBar Output App",
     namespace: "mattwz",
@@ -132,8 +133,10 @@ def updated() {
 }
 
 def initialize() {
-	if(thermo)
-		subscribe(thermo, "thermostatOperatingState", thermostatOperatingStateHandler)
+	if(thermos)
+    	thermos.each {
+			subscribe(it, "thermostatOperatingState", thermostatOperatingStateHandler)
+        }
     state.lastThermostatOperatingState = now()
 }
 def thermostatOperatingStateHandler(evt) {
@@ -195,33 +198,36 @@ def setThermo() {
     def val = params.val
 	log.debug "setThermo called with id ${id} command ${cmdType} and value ${cmdType}"
 
-    if(thermo) {
-    	if(thermo.id == id) {
-        	if(cmdType == "mode") {
-            	if(val == "auto") {
-                	log.debug "Setting thermo to auto"
-                    thermo.auto()
+    if(thermos) {
+    thermos.each {
+            if(it.id == id) {
+            log.debug "setThermo found id ${id}"
+                if(cmdType == "mode") {
+                    if(val == "auto") {
+                        log.debug "Setting thermo to auto"
+                        it.auto()
+                    }
+                    if(val == "heat") {
+                        log.debug "Setting thermo to heat"
+                        it.heat()
+                    }
+                    if(val == "cool") {
+                        log.debug "Setting thermo to cool"
+                        it.cool()
+                    }
+                    if(val == "off") {
+                        log.debug "Setting thermo to off"
+                        it.off()
+                    }
                 }
-            	if(val == "heat") {
-                	log.debug "Setting thermo to heat"
-                    thermo.heat()
+                if(cmdType == "heatingSetpoint") {
+                    log.debug "Setting Heat Setpoint to ${val}"
+                    it.setHeatingSetpoint(val)
                 }
-            	if(val == "cool") {
-                	log.debug "Setting thermo to cool"
-                    thermo.cool()
+                if(cmdType == "coolingSetpoint") {
+                    log.debug "Setting Cool Setpoint to ${val}"
+                    it.setCoolingSetpoint(val)
                 }
-            	if(val == "off") {
-                	log.debug "Setting thermo to off"
-                    thermo.off()
-                }
-            }
-        	if(cmdType == "heatingSetpoint") {
-            	log.debug "Setting Heat Setpoint to ${val}"
-            	thermo.setHeatingSetpoint(val)
-            }
-        	if(cmdType == "coolingSetpoint") {
-            	log.debug "Setting Cool Setpoint to ${val}"
-            	thermo.setCoolingSetpoint(val)
             }
         }
     }
@@ -308,16 +314,18 @@ def getLockData() {
 def getThermoData() {
 
 	def resp = []
-    if(thermo) {
-    	def timespan = now() - state.lastThermostatOperatingState
-    	resp << [displayName: thermo.displayName,
-        		id: thermo.id,
-        		thermostatOperatingState: thermo.currentThermostatOperatingState,
-        		thermostatMode: thermo.currentThermostatMode,
-                coolingSetpoint: thermo.currentCoolingSetpoint,
-                heatingSetpoint: thermo.currentHeatingSetpoint,
-                lastOperationEvent: timespan
-                ];
+    if(thermos) {
+        thermos.each {
+            def timespan = now() - state.lastThermostatOperatingState
+            resp << [displayName: it.displayName,
+                    id: it.id,
+                    thermostatOperatingState: it.currentThermostatOperatingState,
+                    thermostatMode: it.currentThermostatMode,
+                    coolingSetpoint: it.currentCoolingSetpoint,
+                    heatingSetpoint: it.currentHeatingSetpoint,
+                    lastOperationEvent: timespan
+                    ];
+        }
     }
     return resp
 }
@@ -352,7 +360,7 @@ def resp = [ "Version" : version(),
 			 "Motion Sensors" : motionData,
              "Switches" : switchData,
              "Locks" : lockData,
-             "Thermostat" : thermoData,
+             "Thermostats" : thermoData,
 	    	 "Routines" : location.helloHome?.getPhrases()*.label,
              "Modes" : location.modes,
              "CurrentMode" : ["name":location.mode],
@@ -427,11 +435,11 @@ def devicesPage() {
         section("Status Bar Title Device") {
         paragraph "Enter the short name for the device you want displayed as the main status bar item and choose the device"
 			input "displayTempName", "string",
-				title: "Display Name",
+				title: "Main Display Name",
 				multiple: false,
 				required: false
 			input "displayTemp", "capability.temperatureMeasurement",
-				title: "Display Sensor",
+				title: "Main Display Sensor",
 				multiple: false,
 				hideWhenEmpty: true,
 				required: false
@@ -469,9 +477,9 @@ def devicesPage() {
 				multiple: true,
 				hideWhenEmpty: true,
 				required: false
-			input "thermo", "capability.thermostat",
-				title: "Which Thermostat?",
-				multiple: false,
+			input "thermos", "capability.thermostat",
+				title: "Which Thermostats?",
+				multiple: true,
 				hideWhenEmpty: true,
 				required: false
 		}
