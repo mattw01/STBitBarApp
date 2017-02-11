@@ -21,8 +21,11 @@
  // V 1.4 Add Thermostat selection and battery data output
  // V 1.5 Add Thermostat control options and version verification
  // V 1.6 Merge changes from @kurtsanders adding presence and motion capability
+ // V 1.7 Added Routine changes capability from @kurtsanders
+ // V 1.8 Add multiple thermostat support
  
-def version() { return "v1.6" }
+ 
+def version() { return "v1.8" }
 definition(
     name: "BitBar Output App",
     namespace: "mattwz",
@@ -84,6 +87,16 @@ mappings {
       GET: "setThermo"
     ]
   }
+    path("/SetRoutine/") {
+    action: [
+      GET: "setRoutine"
+    ]
+  }
+    path("/SetMode/") {
+    action: [
+      GET: "setMode"
+    ]
+  }
   path("/ToggleLock/") {
     action: [
       GET: "toggleLock"
@@ -120,22 +133,35 @@ def updated() {
 }
 
 def initialize() {
-	if(thermo)
-		subscribe(thermo, "thermostatOperatingState", thermostatOperatingStateHandler)
+	if(thermos)
+    	thermos.each {
+			subscribe(it, "thermostatOperatingState", thermostatOperatingStateHandler)
+        }
     state.lastThermostatOperatingState = now()
-	// TODO: subscribe to attributes, devices, locations, etc.
 }
 def thermostatOperatingStateHandler(evt) {
-	log.debug "thermostatOperatingStateHandler received event" 
+	log.debug "thermostatOperatingStateHandler received event"
 	state.lastThermostatOperatingState = now()
 }
 
 
 // Respond to action requests
+def setRoutine() {
+    def command = params.id
+    log.debug "setRoutine called with command: ${command}"
+	location.helloHome?.execute(command)
+}
+
+def setMode() {
+	def command = params.id
+	log.debug "setMode called with id ${command}"
+    setLocationMode(command)   
+}
+
 def toggleSwitch() {
 	def command = params.id
 	log.debug "toggleSwitch called with id ${command}"
-    
+
     switches.each {
     	if(it.id == command)
         {
@@ -153,7 +179,7 @@ def setLevel() {
 	def command = params.id
     def level = params.level
 	log.debug "toggleSwitch called with id ${command} and level ${level}"
-    
+
     switches.each {
     	if(it.id == command)
         {
@@ -171,34 +197,37 @@ def setThermo() {
     def cmdType = params.type
     def val = params.val
 	log.debug "setThermo called with id ${id} command ${cmdType} and value ${cmdType}"
-    
-    if(thermo) {
-    	if(thermo.id == id) {
-        	if(cmdType == "mode") {
-            	if(val == "auto") {
-                	log.debug "Setting thermo to auto"
-                    thermo.auto()
+
+    if(thermos) {
+    thermos.each {
+            if(it.id == id) {
+            log.debug "setThermo found id ${id}"
+                if(cmdType == "mode") {
+                    if(val == "auto") {
+                        log.debug "Setting thermo to auto"
+                        it.auto()
+                    }
+                    if(val == "heat") {
+                        log.debug "Setting thermo to heat"
+                        it.heat()
+                    }
+                    if(val == "cool") {
+                        log.debug "Setting thermo to cool"
+                        it.cool()
+                    }
+                    if(val == "off") {
+                        log.debug "Setting thermo to off"
+                        it.off()
+                    }
                 }
-            	if(val == "heat") {
-                	log.debug "Setting thermo to heat"
-                    thermo.heat()
+                if(cmdType == "heatingSetpoint") {
+                    log.debug "Setting Heat Setpoint to ${val}"
+                    it.setHeatingSetpoint(val)
                 }
-            	if(val == "cool") {
-                	log.debug "Setting thermo to cool"
-                    thermo.cool()
+                if(cmdType == "coolingSetpoint") {
+                    log.debug "Setting Cool Setpoint to ${val}"
+                    it.setCoolingSetpoint(val)
                 }
-            	if(val == "off") {
-                	log.debug "Setting thermo to off"
-                    thermo.off()
-                }
-            }
-        	if(cmdType == "heatingSetpoint") {
-            	log.debug "Setting Heat Setpoint to ${val}"
-            	thermo.setHeatingSetpoint(val)
-            }
-        	if(cmdType == "coolingSetpoint") {
-            	log.debug "Setting Cool Setpoint to ${val}"
-            	thermo.setCoolingSetpoint(val)
             }
         }
     }
@@ -206,7 +235,7 @@ def setThermo() {
 def toggleLock() {
 	def command = params.id
 	log.debug "toggleLock called with id ${command}"
-    
+
     locks.each {
     	if(it.id == command)
         {
@@ -270,7 +299,7 @@ def getSwitchData() {
         	isDimmer = true
             if(it.currentSwitch == 'on') currentName += " (" + it.currentLevel + "%)"
         }
-        
+
         resp << [name: currentName, value: it.currentSwitch, id : it.id, isDimmer : isDimmer];
     }
     return resp
@@ -285,28 +314,30 @@ def getLockData() {
 def getThermoData() {
 
 	def resp = []
-    if(thermo) {
-    	def timespan = now() - state.lastThermostatOperatingState
-    	resp << [displayName: thermo.displayName,
-        		id: thermo.id,
-        		thermostatOperatingState: thermo.currentThermostatOperatingState,
-        		thermostatMode: thermo.currentThermostatMode,
-                coolingSetpoint: thermo.currentCoolingSetpoint,
-                heatingSetpoint: thermo.currentHeatingSetpoint,
-                lastOperationEvent: timespan
-                ];
+    if(thermos) {
+        thermos.each {
+            def timespan = now() - state.lastThermostatOperatingState
+            resp << [displayName: it.displayName,
+                    id: it.id,
+                    thermostatOperatingState: it.currentThermostatOperatingState,
+                    thermostatMode: it.currentThermostatMode,
+                    coolingSetpoint: it.currentCoolingSetpoint,
+                    heatingSetpoint: it.currentHeatingSetpoint,
+                    lastOperationEvent: timespan
+                    ];
+        }
     }
     return resp
 }
 def getMainDisplayData() {
 	def returnName;
     def returnValue;
-    
+
     if(displayTempName) returnName = displayTempName
     else returnName = "N/A"
     if(displayTemp) returnValue = displayTemp.currentTemperature
     else returnValue = "N/A"
-    
+
 	def resp = []
     resp << [name: returnName, value: returnValue];
     return resp
@@ -329,7 +360,10 @@ def resp = [ "Version" : version(),
 			 "Motion Sensors" : motionData,
              "Switches" : switchData,
              "Locks" : lockData,
-             "Thermostat" : thermoData,
+             "Thermostats" : thermoData,
+	    	 "Routines" : location.helloHome?.getPhrases()*.label,
+             "Modes" : location.modes,
+             "CurrentMode" : ["name":location.mode],
              "MainDisplay" : mainDisplay]
 
 log.debug "getStatus complete"
@@ -338,7 +372,7 @@ return resp
 }
 
 
-private mainPage() {	
+private mainPage() {
 	dynamicPage(name: "mainPage", uninstall:true, install:true) {
 		section("API Setup") {
 			if (state.endpoint) {
@@ -348,10 +382,10 @@ private mainPage() {
                     href "disableAPIPage", title: "Disable API", description: ""
 			}
             else {
-			paragraph "API has not been setup. Tap below to enable it."	
+			paragraph "API has not been setup. Tap below to enable it."
             href name: "enableAPIPageLink", title: "Enable API", description: "", page: "enableAPIPage"
             }
-            
+
 		}
         section("Device Setup") {
         href name: "devicesPageLink", title: "Select Devices", description: "", page: "devicesPage"
@@ -363,7 +397,7 @@ private mainPage() {
 }
 
 
-def disableAPIPage() {	
+def disableAPIPage() {
 	dynamicPage(name: "disableAPIPage", title: "") {
 		section() {
 			if (state.endpoint) {
@@ -374,8 +408,8 @@ def disableAPIPage() {
 					log.debug "Unable to revoke access token: $e"
 				}
 				state.endpoint = null
-			}	
-			paragraph "It has been done. Your token has been REVOKED. You're no longer allowed in API Town (I mean, you can always have a new token). Tap Done to continue."	
+			}
+			paragraph "It has been done. Your token has been REVOKED. You're no longer allowed in API Town (I mean, you can always have a new token). Tap Done to continue."
 		}
 	}
 }
@@ -385,7 +419,7 @@ def enableAPIPage() {
 		section() {
 			if (initializeAppEndpoint()) {
 				paragraph "Woo hoo! The API is now enabled. Brace yourself, though. I hope you don't mind typing long strings of gobbledygook. Sorry I don't know of an easier way to transfer this to the PC. Anyways, tap Done to continue"
-			} 
+			}
 			else {
 				paragraph "It looks like OAuth is not enabled. Please login to your SmartThings IDE, click the My SmartApps menu item, click the 'Edit Properties' button for the BitBar Output App. Then click the OAuth section followed by the 'Enable OAuth in Smart App' button. Click the Update button and BAM you can finally tap Done here.", title: "Looks like we have to enable OAuth still", required: true, state: null
 			}
@@ -396,21 +430,21 @@ def enableAPIPage() {
 
 
 def devicesPage() {
-	dynamicPage(name:"devicesPage") {	
-    
+	dynamicPage(name:"devicesPage") {
+
         section("Status Bar Title Device") {
         paragraph "Enter the short name for the device you want displayed as the main status bar item and choose the device"
 			input "displayTempName", "string",
-				title: "Display Name",
+				title: "Main Display Name",
 				multiple: false,
-				required: false		
+				required: false
 			input "displayTemp", "capability.temperatureMeasurement",
-				title: "Display Sensor",
+				title: "Main Display Sensor",
 				multiple: false,
 				hideWhenEmpty: true,
-				required: false		
+				required: false
         }
-        
+
 		section ("Choose Devices") {
 			paragraph "Select devices that you want to be displayed in the menubar."
 			input "temps", "capability.temperatureMeasurement",
@@ -422,39 +456,39 @@ def devicesPage() {
 				title: "Which Contact Sensors?",
 				multiple: true,
 				hideWhenEmpty: true,
-				required: false                
+				required: false
 			input "motions", "capability.motionSensor",
 				title: "Which Motion Sensors?",
 				multiple: true,
 				hideWhenEmpty: true,
-				required: false                
+				required: false
 			input "switches", "capability.switch",
 				title: "Which Switches?",
 				multiple: true,
 				hideWhenEmpty: true,
-				required: false	
+				required: false
 			input "locks", "capability.lock",
 				title: "Which Locks?",
 				multiple: true,
 				hideWhenEmpty: true,
-				required: false	
+				required: false
 			input "presences", "capability.presenceSensor",
 				title: "Which Presence Sensors?",
 				multiple: true,
 				hideWhenEmpty: true,
-				required: false                
-			input "thermo", "capability.thermostat",
-				title: "Which Thermostat?",
-				multiple: false,
+				required: false
+			input "thermos", "capability.thermostat",
+				title: "Which Thermostats?",
+				multiple: true,
 				hideWhenEmpty: true,
-				required: false	
+				required: false
 		}
 
 	}
 }
 
 
-private initializeAppEndpoint() {	
+private initializeAppEndpoint() {
 	if (!state.endpoint) {
 		try {
 			def accessToken = createAccessToken()
@@ -463,7 +497,7 @@ private initializeAppEndpoint() {
                 state.endpointURL = apiServerUrl("/api/smartapps/installations/${app.id}/")	
                 state.endpointSecret = accessToken
 			}
-		} 
+		}
 		catch(e) {
 			state.endpoint = null
 		}
