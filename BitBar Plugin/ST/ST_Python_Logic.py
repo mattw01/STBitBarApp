@@ -9,7 +9,7 @@ import decimal
 import time
 import os
 import urllib
-
+from urlparse import urlparse
 ##################################
 # Set Required SmartApp Version
 requiredVersion = 'v1.8'
@@ -116,7 +116,11 @@ def openParamBuilder(openCommand):
         i+=1
         rc+="param{}={} ".format(i,word)
     return rc
-
+# Build the SmartThings IDE URL based on the SmartApp URL input
+def buildIDEURL(url):
+    parsed_uri = urlparse(url)
+    ide = '{uri.scheme}://{uri.netloc}/ide/apps'.format(uri=parsed_uri)
+    return ide
 
 # Begin Read User Config File
 cfgFileName                 = sys.argv[0][:-2] + "cfg"
@@ -628,4 +632,4 @@ bitbarAppOptions=" | color={}".format(titleColor)
 print "STBitBarApp Configuration" + bitbarAppOptions
 print "--Edit Configuration"      + bitbarAppOptions + openParamBuilder("open -e " + cfgFileName)
 print "--Browse STBitBarAPP "     + requiredVersion + " Software Resp" + bitbarAppOptions + openParamBuilder("open https://github.com/mattw01/STBitBarApp")
-print "--Browse SmartThings IDE"  + bitbarAppOptions + openParamBuilder("open https://graph.api.smartthings.com/ide/apps")
+print "--Browse SmartThings IDE"  + bitbarAppOptions + openParamBuilder("open " + buildIDEURL(smartAppURL))
