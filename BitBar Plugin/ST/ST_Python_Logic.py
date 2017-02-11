@@ -8,10 +8,11 @@ import re
 import decimal
 import time
 import os
+import urllib
 
 ##################################
 # Set Required SmartApp Version
-requiredVersion = 'v1.6'
+requiredVersion = 'v1.7'
 ##################################
 
 
@@ -47,40 +48,40 @@ class NumberFormatter:
 
 # Format percentages
 def formatPercentage(val):
-	if type(val) is int: return str(val) + "%"
-	else: return val
+    if type(val) is int: return str(val) + "%"
+    else: return val
 # Format timespan values in milliseconds
 def formatTimespan(ms):
-	seconds=(timespan/1000)%60
-	minutes=(timespan/(1000*60))%60
-	hours=(timespan/(1000*60*60))%24
-	timspanString = ''
-	if hours > 0: timspanString += str(hours) + " hour"
-	if hours > 1: timspanString += "s"
-	if hours == 0:
-	    if minutes == 0: timspanString += "less than a minute"
-	    if minutes == 1: timspanString += "a minute"
-	    if minutes > 1: timspanString += " " + str(minutes) + " minute"
-	else: timspanString += " " + str(minutes) + " minute"
-	if minutes > 1: timspanString += "s"
-	return timspanString
+    seconds=(timespan/1000)%60
+    minutes=(timespan/(1000*60))%60
+    hours=(timespan/(1000*60*60))%24
+    timspanString = ''
+    if hours > 0: timspanString += str(hours) + " hour"
+    if hours > 1: timspanString += "s"
+    if hours == 0:
+        if minutes == 0: timspanString += "less than a minute"
+        if minutes == 1: timspanString += "a minute"
+        if minutes > 1: timspanString += " " + str(minutes) + " minute"
+    else: timspanString += " " + str(minutes) + " minute"
+    if minutes > 1: timspanString += "s"
+    return timspanString
 # Return hex color code based on multiple step gradient (for thermo colors)
 def numberToColorGrad(val, color):
-	if color == 'red':
-		if val == 5: return "#E50008"
-		if val == 4: return "#EB1B20"
-		if val == 3: return "#F23739"
-		if val == 2: return "#F85352"
-		if val == 1: return "#FF6F6B"
-		if val == 0: return "#FF757A"
-	if color == 'blue':
-		if val == 5: return "#002FE5"
-		if val == 4: return "#1745EA"
-		if val == 3: return "#2E5BEF"
-		if val == 2: return "#4671F4"
-		if val == 1: return "#5D87F9"
-		if val == 0: return "#759DFF"
-	return "green"
+    if color == 'red':
+        if val == 5: return "#E50008"
+        if val == 4: return "#EB1B20"
+        if val == 3: return "#F23739"
+        if val == 2: return "#F85352"
+        if val == 1: return "#FF6F6B"
+        if val == 0: return "#FF757A"
+    if color == 'blue':
+        if val == 5: return "#002FE5"
+        if val == 4: return "#1745EA"
+        if val == 3: return "#2E5BEF"
+        if val == 2: return "#4671F4"
+        if val == 1: return "#5D87F9"
+        if val == 0: return "#759DFF"
+    return "green"
 
 # Setting Class
 class Setting(object):
@@ -156,6 +157,8 @@ switchURL = smartAppURL + "ToggleSwitch/?id="
 levelURL = smartAppURL + "SetLevel/?id="
 lockURL = smartAppURL + "ToggleLock/?id="
 thermoURL = smartAppURL + "SetThermo/?id="
+routineURL = smartAppURL + "SetRoutine/?id="
+modeURL = smartAppURL + "SetMode/?id="
 
 # Set the callback script for switch/level commands from parameters
 callbackScript = sys.argv[1]
@@ -166,19 +169,19 @@ attempt = 0
 maxRetries = 10
 connected = False
 while connected is False:
-	try:
-		output = check_output(['curl', '-s', statusURL, '-H', 'Authorization: Bearer ' + secret])
-		connected = True
-	except subprocess.CalledProcessError as grepexc:
-		attempt += 1
-		if attempt == maxRetries:
-			print "No Connection"
-			print "---"
-			print "Please check connection and try again (⌘R)"
-			print "Debug information: Error code ", grepexc.returncode, grepexc.output
-			raise SystemExit(0)
-		time.sleep(3)
-		continue
+    try:
+        output = check_output(['curl', '-s', statusURL, '-H', 'Authorization: Bearer ' + secret])
+        connected = True
+    except subprocess.CalledProcessError as grepexc:
+        attempt += 1
+        if attempt == maxRetries:
+            print "No Connection"
+            print "---"
+            print "Please check connection and try again (⌘R)"
+            print "Debug information: Error code ", grepexc.returncode, grepexc.output
+            raise SystemExit(0)
+        time.sleep(3)
+        continue
 
 # Parse the JSON data
 j = json.loads(output)
@@ -196,23 +199,27 @@ if "error" in j:
 
 # Get the sensor arrays from the JSON data
 try:
-  temps       = j['Temp Sensors']
-  contacts    = j['Contact Sensors']
-  switches    = j['Switches']
-  motion      = j['Motion Sensors']
-  mainDisplay = j['MainDisplay']
-  locks       = j['Locks']
-  presences   = j['Presence Sensors']
-  thermostat = j['Thermostat']
+  temps         = j['Temp Sensors']
+  contacts      = j['Contact Sensors']
+  switches      = j['Switches']
+  motion        = j['Motion Sensors']
+  mainDisplay   = j['MainDisplay']
+  locks         = j['Locks']
+  presences     = j['Presence Sensors']
+  thermostat    = j['Thermostat']
+  routines      = j['Routines']
+  modes         = j['Modes']
+  currentmode   = j['CurrentMode']
 except KeyError,e:
-	print "Error in ST API Data"
-	print "---"
-	print "Error Details: ", e
-	print "Source Data: ", output
-	raise SystemExit(0)
+    print "Error in ST API Data"
+    print "---"
+    print "Error Details: ", e
+    print "Source Data: ", output
+    raise SystemExit(0)
+
 
 # Sort sensors by name if option is enabled
-if sortSensors is True:	
+if sortSensors is True:
   temps       = sorted(temps, key=lambda k: k['name'])
   contacts    = sorted(contacts, key=lambda k: k['name'])
   switches    = sorted(switches, key=lambda k: k['name'])
@@ -220,23 +227,24 @@ if sortSensors is True:
   mainDisplay = sorted(mainDisplay, key=lambda k: k['name'])
   locks       = sorted(locks, key=lambda k: k['name'])
   presences   = sorted(presences, key=lambda k: k['name'])
+  modes       = sorted(modes, key=lambda k: k['name'])
 
-# Verify SmartApp Version	
+# Verify SmartApp Version
 try:
-	ver = j['Version']
-	if ver != requiredVersion:
-		print "ST BitBar Version Error"
-		print "---"
-		print "Please make sure both Python and SmartThings SmartApp are up to date"
-		print "Current Version:", ver
-		print "Required Version:", requiredVersion
-		raise SystemExit(0)
+    ver = j['Version']
+    if ver != requiredVersion:
+        print "ST BitBar Version Error"
+        print "---"
+        print "Please make sure both Python and SmartThings SmartApp are up to date"
+        print "Current Version:", ver
+        print "Required Version:", requiredVersion
+        raise SystemExit(0)
 except KeyError,e:
-	print "Error in ST API Data"
-	print "---"
-	print "Error Details: ", e
-	print "Source Data: ", output
-	raise SystemExit(0)
+    print "Error in ST API Data"
+    print "---"
+    print "Error Details: ", e
+    print "Source Data: ", output
+    raise SystemExit(0)
 
 # Create a new NumberFormatter object
 formatter = NumberFormatter()
@@ -247,24 +255,26 @@ formatter.setRoundingPrecision(numberOfDecimals)
 # Format thermostat status color
 thermoColor = ''
 if len(thermostat) > 0:
-	if "thermostatOperatingState" in thermostat[0]:
-		if thermostat[0]['thermostatOperatingState'] == "heating":
-			thermoColor = "|color=red"
-		if thermostat[0]['thermostatOperatingState'] == "cooling":
-			thermoColor = "|color=blue"
+    if "thermostatOperatingState" in thermostat[0]:
+        if thermostat[0]['thermostatOperatingState'] == "heating":
+            thermoColor = "|color=red"
+        if thermostat[0]['thermostatOperatingState'] == "cooling":
+            thermoColor = "|color=blue"
 
 
 # Print the main display
+
 degree_symbol = u'\xb0'.encode('utf8')
 formattedMainDisplay = ''
 # Check if there is a name
-if mainDisplay[0]['name'] != None or mainDisplay[0]['name'] != "N/A":
-	formattedMainDisplay += str(mainDisplay[0]['name'])
+if mainDisplay[0]['name'] != None and mainDisplay[0]['name'] != "N/A":
+    formattedMainDisplay += str(mainDisplay[0]['name']) + ":"
+
 # Check if there is a value
 if type(mainDisplay[0]['value']) is int or type(mainDisplay[0]['value']) is float:
-	formattedMainDisplay += ":" + formatter.formatNumber(mainDisplay[0]['value']) + degree_symbol
+    formattedMainDisplay += formatter.formatNumber(mainDisplay[0]['value']) + degree_symbol
 if formattedMainDisplay == '':
-	formattedMainDisplay = "ST BitBar"
+    formattedMainDisplay = "ST BitBar"
 print formattedMainDisplay + thermoColor
 
 # Find the max length sensor so values are lined up correctly
@@ -304,82 +314,82 @@ print '---'
 
 # Output Thermostat data
 if len(thermostat) > 0:
-	thermoImage = "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"
-	if "thermostatMode" in thermostat[0] and\
-	    "thermostatOperatingState" in thermostat[0]:
-		setpointText = ''
-		setpointAction = ' @ '
-		# Set the action text based on operation state
-		# Example: cooling to 75, idle @ 72, heating to 68
-		if thermostat[0]['thermostatOperatingState'] == 'cooling' or\
-		thermostat[0]['thermostatOperatingState'] == 'heating':
-			setpointAction = ' to '
-		currentSetpoint = 0
-		# Pick the correction setpoint value
-		if thermostat[0]['thermostatMode'] == 'cool':
-			currentSetpoint = thermostat[0]['coolingSetpoint']
-		if thermostat[0]['thermostatMode'] == 'heat':
-			currentSetpoint = thermostat[0]['heatingSetpoint']
-		# Set the display string
-		setpointText = "(" + str(thermostat[0]['thermostatOperatingState']) + setpointAction + str(currentSetpoint) + degree_symbol + ")"
-		if "displayName" in thermostat[0]: 
-			print thermostat[0]['displayName'],setpointText,'|image=', thermoImage
-		else: print "Thermostat Control",setpointText,'|image=', thermoImage
-		print "--Current Status|font=Helvetica-Bold color=" + titleColor + " size=14"
-		if "thermostatMode" in thermostat[0]:
-			print "--Mode:",thermostat[0]['thermostatMode']
-		if "thermostatOperatingState" in thermostat[0]:
-			print "--Status:",thermostat[0]['thermostatOperatingState']
-		if "lastOperationEvent" in thermostat[0]:
-			timespan = thermostat[0]['lastOperationEvent']
-			print "--Last Event:", formatTimespan(timespan), "ago"
-		print "--Controls|font=Helvetica-Bold color=" + titleColor + " size=14"
-		currentThermoURL = thermoURL + thermostat[0]['id']
-		thermoModeURL = currentThermoURL + "&type=mode&val="
-		# Mode Menu
-		if "thermostatMode" in thermostat[0]:
-			print "--Mode"
-			print "----Auto|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "auto" + " param3=" + secret 
-			print "----Cool|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "cool" + " param3=" + secret 
-			print "----Heat|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "heat" + " param3=" + secret 
-			print "----Off|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "off" + " param3=" + secret 
-		# Cooling Setpoint Menu
-		if "coolingSetpoint" in thermostat[0]:
-			if thermostat[0]['coolingSetpoint'] != None:
-				coolSetpointURL = currentThermoURL + "&type=coolingSetpoint&val="
-				currentCoolingSetPoint = int(thermostat[0]['coolingSetpoint'])
-				print "--Cooling Set Point (" + str(currentCoolingSetPoint) + degree_symbol + ")|color=blue"
-				print "----Change Setpoint|size=9"
-				for c in range(currentCoolingSetPoint - 5, currentCoolingSetPoint):
-					id = currentCoolingSetPoint - c
-					print "----",str(c)+degree_symbol,"|color=blue font=Helvetica-Bold color=",numberToColorGrad(id, "blue"),\
-					"bash=", callbackScript, " param1=request param2=", str(coolSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
-				print "----", str(currentCoolingSetPoint)+degree_symbol,"(current)|color=",numberToColorGrad(0, "blue")
-				for c in range(currentCoolingSetPoint + 1, currentCoolingSetPoint + 6):
-					print "----",str(c)+degree_symbol,"|color=gray font=Helvetica-Bold",\
-					"bash=", callbackScript, " param1=request param2=", str(coolSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
-		# Heating Setpoint Menu	
-		if "heatingSetpoint" in thermostat[0]:
-			if thermostat[0]['heatingSetpoint'] != None:
-				heatingSetpointURL = currentThermoURL + "&type=heatingSetpoint&val="
-				currentHeatingSetPoint = int(thermostat[0]['heatingSetpoint'])
-				print "--Heating Set Point (" + str(currentHeatingSetPoint) + degree_symbol + ")|color=red"
-				print "----Change Setpoint|size=9"
-				for c in range(currentHeatingSetPoint + 5, currentHeatingSetPoint, -1):
-					id = c - currentHeatingSetPoint
-					print "----",str(c)+degree_symbol,"|color=red font=Helvetica-Bold color=",numberToColorGrad(id, "red"),\
-					"bash=", callbackScript, " param1=request param2=", str(heatingSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
-				print "----", str(currentHeatingSetPoint)+degree_symbol,"(current)|color=",numberToColorGrad(0, "red")
-				for c in range(currentHeatingSetPoint - 1, currentHeatingSetPoint - 6, -1):
-					print "----",str(c)+degree_symbol,"|color=gray font=Helvetica-Bold",\
-					"bash=", callbackScript, " param1=request param2=", str(heatingSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
+    thermoImage = "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"
+    if "thermostatMode" in thermostat[0] and\
+        "thermostatOperatingState" in thermostat[0]:
+        setpointText = ''
+        setpointAction = ' @ '
+        # Set the action text based on operation state
+        # Example: cooling to 75, idle @ 72, heating to 68
+        if thermostat[0]['thermostatOperatingState'] == 'cooling' or\
+        thermostat[0]['thermostatOperatingState'] == 'heating':
+            setpointAction = ' to '
+        currentSetpoint = 0
+        # Pick the correction setpoint value
+        if thermostat[0]['thermostatMode'] == 'cool':
+            currentSetpoint = thermostat[0]['coolingSetpoint']
+        if thermostat[0]['thermostatMode'] == 'heat':
+            currentSetpoint = thermostat[0]['heatingSetpoint']
+        # Set the display string
+        setpointText = "(" + str(thermostat[0]['thermostatOperatingState']) + setpointAction + str(currentSetpoint) + degree_symbol + ")"
+        if "displayName" in thermostat[0]:
+            print thermostat[0]['displayName'],setpointText,'|image=', thermoImage
+        else: print "Thermostat Control",setpointText,'|image=', thermoImage
+        print "--Current Status|font=Helvetica-Bold color=" + titleColor + " size=14"
+        if "thermostatMode" in thermostat[0]:
+            print "--Mode:",thermostat[0]['thermostatMode']
+        if "thermostatOperatingState" in thermostat[0]:
+            print "--Status:",thermostat[0]['thermostatOperatingState']
+        if "lastOperationEvent" in thermostat[0]:
+            timespan = thermostat[0]['lastOperationEvent']
+            print "--Last Event:", formatTimespan(timespan), "ago"
+        print "--Controls|font=Helvetica-Bold color=" + titleColor + " size=14"
+        currentThermoURL = thermoURL + thermostat[0]['id']
+        thermoModeURL = currentThermoURL + "&type=mode&val="
+        # Mode Menu
+        if "thermostatMode" in thermostat[0]:
+            print "--Mode"
+            print "----Auto|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "auto" + " param3=" + secret
+            print "----Cool|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "cool" + " param3=" + secret
+            print "----Heat|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "heat" + " param3=" + secret
+            print "----Off|bash=" + callbackScript + " param1=request param2=" + thermoModeURL + "off" + " param3=" + secret
+        # Cooling Setpoint Menu
+        if "coolingSetpoint" in thermostat[0]:
+            if thermostat[0]['coolingSetpoint'] != None:
+                coolSetpointURL = currentThermoURL + "&type=coolingSetpoint&val="
+                currentCoolingSetPoint = int(thermostat[0]['coolingSetpoint'])
+                print "--Cooling Set Point (" + str(currentCoolingSetPoint) + degree_symbol + ")|color=blue"
+                print "----Change Setpoint|size=9"
+                for c in range(currentCoolingSetPoint - 5, currentCoolingSetPoint):
+                    id = currentCoolingSetPoint - c
+                    print "----",str(c)+degree_symbol,"|color=blue font=Helvetica-Bold color=",numberToColorGrad(id, "blue"),\
+                    "bash=", callbackScript, " param1=request param2=", str(coolSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
+                print "----", str(currentCoolingSetPoint)+degree_symbol,"(current)|color=",numberToColorGrad(0, "blue")
+                for c in range(currentCoolingSetPoint + 1, currentCoolingSetPoint + 6):
+                    print "----",str(c)+degree_symbol,"|color=gray font=Helvetica-Bold",\
+                    "bash=", callbackScript, " param1=request param2=", str(coolSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
+        # Heating Setpoint Menu
+        if "heatingSetpoint" in thermostat[0]:
+            if thermostat[0]['heatingSetpoint'] != None:
+                heatingSetpointURL = currentThermoURL + "&type=heatingSetpoint&val="
+                currentHeatingSetPoint = int(thermostat[0]['heatingSetpoint'])
+                print "--Heating Set Point (" + str(currentHeatingSetPoint) + degree_symbol + ")|color=red"
+                print "----Change Setpoint|size=9"
+                for c in range(currentHeatingSetPoint + 5, currentHeatingSetPoint, -1):
+                    id = c - currentHeatingSetPoint
+                    print "----",str(c)+degree_symbol,"|color=red font=Helvetica-Bold color=",numberToColorGrad(id, "red"),\
+                    "bash=", callbackScript, " param1=request param2=", str(heatingSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
+                print "----", str(currentHeatingSetPoint)+degree_symbol,"(current)|color=",numberToColorGrad(0, "red")
+                for c in range(currentHeatingSetPoint - 1, currentHeatingSetPoint - 6, -1):
+                    print "----",str(c)+degree_symbol,"|color=gray font=Helvetica-Bold",\
+                    "bash=", callbackScript, " param1=request param2=", str(heatingSetpointURL + str(c)), " param3=", secret," terminal=false refresh=true"
 
 
 # Output Temp Sensors
 countSensors = len(temps)
 if countSensors > 0:
     menuTitle = "Temp Sensors"
-    mainTitle = menuTitle 
+    mainTitle = menuTitle
     if showSensorCount == True: mainTitle += " ("+str(countSensors)+")"
     print mainTitle, "| font=Helvetica-Bold color=" + titleColor + " size=15"
     colorSwitch = False
@@ -395,15 +405,35 @@ if countSensors > 0:
         if colorSwitch == True: colorText = 'color=#333333'
         if colorSwitch == False: colorText = 'color=#666666'
         if i == mainMenuMaxItems:
-			print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
-			print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
-			subMenuText = "--"            
+            print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
+            print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
+            subMenuText = "--"
         print subMenuText, sensor['name'], whiteSpace, currentValue+degree_symbol, '|font=Menlo', colorText
         if "battery" in sensor:
-			print subMenuText, sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true",colorText
+            print subMenuText, sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true",colorText
         colorSwitch = not colorSwitch
 
-# Output Contact Sensors
+# Output Modes
+if len(modes) > 0:
+    if currentmode['name'] == "Home":
+        emoji = " :house: "
+    else:
+        emoji = ""
+    print "Current House Mode: {} {}".format(emoji + currentmode['name'],"| font=Helvetica-Bold size=15")
+    print "--Modes (Select to Change) | font=Helvetica-Bold color=black size=15"
+    for i, mode in enumerate(modes):
+        if mode['name'] not in currentmode['name']:
+            currentModeURL = modeURL + urllib.quote_plus(mode['name'])
+            print "-- " + mode['name'], '|font=Menlo color=black bash=', callbackScript, ' param1=request param2=', currentModeURL, ' param3=', secret, ' terminal=false refresh=true'
+
+# Output Routines
+if len(routines) > 0:
+    print "-- Routines (Select to Change) | font=Helvetica-Bold color=black size=15"
+    for i, routine in enumerate(routines):
+        currentRoutineURL = routineURL + urllib.quote_plus(routine)
+        print "-- " + routine, '|font=Menlo color=black bash=', callbackScript, ' param1=request param2=', currentRoutineURL, ' param3=', secret, ' terminal=false refresh=true'
+
+    # Output Contact Sensors
 countSensors = len(contacts)
 if countSensors > 0:
     menuTitle = "Contact Sensors"
@@ -425,12 +455,12 @@ if countSensors > 0:
         if colorSwitch == True: colorText = 'color=#333333'
         if colorSwitch == False: colorText = 'color=#666666'
         if i == mainMenuMaxItems:
-			print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
-			print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
-			subMenuText = "--"            
+            print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
+            print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
+            subMenuText = "--"
         print subMenuText, sensor['name'], whiteSpace, sym, '|font=Menlo', colorText
         if "battery" in sensor:
-			print subMenuText, sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true",colorText
+            print subMenuText, sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true",colorText
         colorSwitch = not colorSwitch
 
 
@@ -456,12 +486,12 @@ if countSensors > 0:
         if colorSwitch == True: colorText = 'color=#333333'
         if colorSwitch == False: colorText = 'color=#666666'
         if i == mainMenuMaxItems:
-			print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
-			print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
-			subMenuText = "--"            
+            print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
+            print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
+            subMenuText = "--"
         print subMenuText, sensor['name'], whiteSpace, sym, '|font=Menlo', colorText
         if "battery" in sensor:
-			print subMenuText, sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true",colorText
+            print subMenuText, sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true",colorText
         colorSwitch = not colorSwitch
 
 # Output Presence Sensors
@@ -484,12 +514,12 @@ if countSensors > 0:
         else:
             emoji = presensceNotPresentEmoji
         if i >= mainMenuMaxItems:
-			print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
-			print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
-			subMenuText = "--"            
+            print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
+            print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
+            subMenuText = "--"
         print subMenuText, sensor['name'], whiteSpace, emoji, '|font=Menlo', colorText
         if "battery" in sensor:
-			print subMenuText, sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true",colorText
+            print subMenuText, sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true",colorText
         colorSwitch = not colorSwitch
 
 # Set base64 images for green locked/red unlocked
@@ -524,15 +554,15 @@ if countSensors > 0:
         else:
             sensor['name'] = sensor['name'] + "(" + str(sensor['value']) + ")"
         if i >= mainMenuMaxItems:
-			print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
-			print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
-			subMenuText = "--"   
+            print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
+            print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
+            subMenuText = "--"
         if useImages is True:
-			print subMenuText, sensor[
-				'name'], '|font=Menlo bash=', callbackScript, ' param1=request param2=', currentLockURL, ' param3=', secret, ' terminal=false refresh=true image=', img
+            print subMenuText, sensor[
+                'name'], '|font=Menlo bash=', callbackScript, ' param1=request param2=', currentLockURL, ' param3=', secret, ' terminal=false refresh=true image=', img
         else:
-			print subMenuText, sensor[
-				'name'], whiteSpace, sym, '|font=Menlo bash=', callbackScript, ' param1=request param2=', currentLockURL, ' param3=', secret, ' terminal=false refresh=true'
+            print subMenuText, sensor[
+                'name'], whiteSpace, sym, '|font=Menlo bash=', callbackScript, ' param1=request param2=', currentLockURL, ' param3=', secret, ' terminal=false refresh=true'
 
 
 
@@ -563,9 +593,9 @@ if countSensors > 0:
             img = redImage
         currentSwitchURL = switchURL + sensor['id']
         if i == mainMenuMaxItems:
-			print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
-			print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
-			subMenuText = "--"       
+            print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
+            print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
+            subMenuText = "--"
         if useImages is True:
             print subMenuText, sensor[
                 'name'], '|font=Menlo bash=', callbackScript, ' param1=request param2=', currentSwitchURL, ' param3=', secret, ' terminal=false refresh=true image=', img
