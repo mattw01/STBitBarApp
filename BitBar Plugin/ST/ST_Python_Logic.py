@@ -623,8 +623,9 @@ if countSensors > 0:
                 currentLevel += 10
 
 # Configuration Options
-bitbarAppOptions=" | font=Menlo color={}".format(titleColor)
+print "---"
+bitbarAppOptions=" | color={}".format(titleColor)
 print "STBitBarApp Configuration" + bitbarAppOptions
-print "--Edit "                   + os.path.basename(cfgFileName)      + bitbarAppOptions + openParamBuilder("open -e " + cfgFileName)
+print "--Edit Configuration"      + bitbarAppOptions + openParamBuilder("open -e " + cfgFileName)
 print "--Browse STBitBarAPP "     + requiredVersion + " Software Resp" + bitbarAppOptions + openParamBuilder("open https://github.com/mattw01/STBitBarApp")
 print "--Browse SmartThings IDE"  + bitbarAppOptions + openParamBuilder("open https://graph.api.smartthings.com/ide/apps")
