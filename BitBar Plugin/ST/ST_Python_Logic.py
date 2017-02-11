@@ -108,8 +108,17 @@ class Setting(object):
             return ret
 # End Class Setting
 
-# Begin Read User Config File
+# Builds the param statement for bitbar to launch the "open" command
+def openParamBuilder(openCommand):
+    rc=" terminal=false bash={} ".format(sys.argv[1])
+    i=0
+    for word in openCommand.split():
+        i+=1
+        rc+="param{}={} ".format(i,word)
+    return rc
 
+
+# Begin Read User Config File
 cfgFileName                 = sys.argv[0][:-2] + "cfg"
 cfgFileObj                  = Setting(cfgFileName)
 cfgGetValue                 = cfgFileObj.get_setting
@@ -612,3 +621,11 @@ if countSensors > 0:
                 if currentLevel is 100:
                     break
                 currentLevel += 10
+
+# Configuration Options
+print "---"
+bitbarAppOptions=" | color={}".format(titleColor)
+print "STBitBarApp Configuration" + bitbarAppOptions
+print "--Edit Configuration"      + bitbarAppOptions + openParamBuilder("open -e " + cfgFileName)
+print "--Browse STBitBarAPP "     + requiredVersion + " Software Resp" + bitbarAppOptions + openParamBuilder("open https://github.com/mattw01/STBitBarApp")
+print "--Browse SmartThings IDE"  + bitbarAppOptions + openParamBuilder("open https://graph.api.smartthings.com/ide/apps")
