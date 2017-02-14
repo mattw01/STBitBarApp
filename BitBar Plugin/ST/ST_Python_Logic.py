@@ -133,6 +133,7 @@ sortSensors                 = cfgGetValue('sortSensors'     , True)
 showSensorCount             = cfgGetValue('showSensorCount' , True)
 presenscePresentEmoji       = cfgGetValue('presenscePresentEmoji'   , ":house:")
 presensceNotPresentEmoji    = cfgGetValue('presensceNotPresentEmoji', ":x:")
+presenceDisplayMode         = cfgGetValue('presenceDisplayMode', 0)
 
 # Main menu and sub-menu number of items settings
 mainMenuMaxItemsDict = {"Temps"     : 99,
@@ -230,7 +231,6 @@ except KeyError,e:
     print "Source Data: ", output
     raise SystemExit(0)
 
-
 # Sort sensors by name if option is enabled
 if sortSensors is True:
   temps       = sorted(temps, key=lambda k: k['name'])
@@ -241,6 +241,15 @@ if sortSensors is True:
   locks       = sorted(locks, key=lambda k: k['name'])
   presences   = sorted(presences, key=lambda k: k['name'])
   modes       = sorted(modes, key=lambda k: k['name'])
+  
+
+# Presence sort mode by status or in submenu, sort by value desc 
+if presenceDisplayMode == 1 or presenceDisplayMode == 2:
+    presences = sorted(presences, key=lambda k: k['value'], reverse=True)
+
+# Presence display mode only show present sensors
+if presenceDisplayMode == 3:
+    presences = filter(lambda p: p['value'] == 'present', presences)
 
 # Verify SmartApp Version
 try:
@@ -447,7 +456,7 @@ if len(routines) > 0:
         currentRoutineURL = routineURL + urllib.quote_plus(routine)
         print "-- " + routine, '|font=Menlo color=black bash=', callbackScript, ' param1=request param2=', currentRoutineURL, ' param3=', secret, ' terminal=false refresh=true'
 
-    # Output Contact Sensors
+# Output Contact Sensors
 countSensors = len(contacts)
 if countSensors > 0:
     menuTitle = "Contact Sensors"
@@ -517,6 +526,8 @@ if countSensors > 0:
     print mainTitle, "|font=Helvetica-Bold color=" + titleColor + " size=15"
     mainMenuMaxItems = mainMenuMaxItemsDict["Presences"]
     subMenuText = ''
+    notPresentMenuText = ''
+    notPresentSubmenu = False
     for i, sensor in enumerate(presences):
         currentLength = len(sensor['name'])
         extraLength = maxLength - currentLength
@@ -527,13 +538,22 @@ if countSensors > 0:
             emoji = presenscePresentEmoji
         else:
             emoji = presensceNotPresentEmoji
-        if i >= mainMenuMaxItems:
+        # Only show the More... menu if there is no presence submenu
+        if i == mainMenuMaxItems and notPresentSubmenu == False:
             print "{} More... | {}".format(countSensors-mainMenuMaxItems, subMenuMoreColor)
             print "-- " + menuTitle + " ("+str(countSensors-mainMenuMaxItems)+")"
             subMenuText = "--"
-        print subMenuText, sensor['name'], whiteSpace, emoji, '|font=Menlo', colorText
+        # If the presence mode is show not present in submenu
+        if presenceDisplayMode == 2 and sensor['value'] != 'present':
+            #If this is the first not present sensor
+            if notPresentSubmenu == False:
+                print subMenuText, "Sensors Not Present"
+                notPresentSubmenu = True
+            # Set the submenu text
+            notPresentMenuText = "--"
+        print subMenuText + notPresentMenuText, sensor['name'], whiteSpace, emoji, '|font=Menlo', colorText
         if "battery" in sensor:
-            print subMenuText, sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true",colorText
+            print subMenuText + notPresentMenuText, sensor['name'], whiteSpace, formatPercentage(sensor['battery']), "|font=Menlo alternate=true",colorText
         colorSwitch = not colorSwitch
 
 # Set base64 images for green locked/red unlocked
